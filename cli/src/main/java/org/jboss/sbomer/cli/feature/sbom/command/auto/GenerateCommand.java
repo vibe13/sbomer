@@ -171,6 +171,8 @@ public class GenerateCommand implements Callable<Integer> {
         command.add("--workdir");
         command.add(outputDir.toAbsolutePath().toString());
 
+        log.info("--->>> Workdir path: {}", outputDir.toAbsolutePath().toString());
+
         if (force) {
             command.add("--force");
         }

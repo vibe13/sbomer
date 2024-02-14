@@ -26,19 +26,33 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 @SuppressWarnings(value = "unchecked")
 public class GenerationRequestFluent<A extends GenerationRequestFluent<A>> extends ConfigMapFluent<A> {
 
+    private SbomGenerationType type;
     private String id;
     private String buildId;
+    private String operationId;
     private SbomGenerationStatus status;
     private String reason;
     private String config;
     private String envConfig;
+    private String operationConfig;
     private GenerationResult result;
 
-    public ConfigMapFluent<A>.MetadataNested<A> withNewDefaultMetadata(String buildId) {
+    public ConfigMapFluent<A>.MetadataNested<A> withNewDefaultMetadata(
+            String identifier,
+            SbomGenerationType sbomGenerationType) {
         return withNewMetadataLike(
-                new ObjectMetaBuilder().withGenerateName("sbom-request-" + buildId.toLowerCase() + "-")
-                        .withLabels(Labels.defaultLabelsToMap())
+                new ObjectMetaBuilder().withGenerateName("sbom-request-" + identifier.toLowerCase() + "-")
+                        .withLabels(Labels.defaultLabelsToMap(sbomGenerationType))
                         .build());
+    }
+
+    public A withType(SbomGenerationType type) {
+        this.type = type;
+        return (A) this;
+    }
+
+    public SbomGenerationType getType() {
+        return type;
     }
 
     public A withBuildId(String buildId) {
@@ -48,6 +62,15 @@ public class GenerationRequestFluent<A extends GenerationRequestFluent<A>> exten
 
     public String getBuildId() {
         return buildId;
+    }
+
+    public A withOperationId(String operationId) {
+        this.operationId = operationId;
+        return (A) this;
+    }
+
+    public String getOperationId() {
+        return operationId;
     }
 
     public A withId(String id) {
@@ -93,6 +116,15 @@ public class GenerationRequestFluent<A extends GenerationRequestFluent<A>> exten
 
     public String getConfig() {
         return config;
+    }
+
+    public A withOperationConfig(String operationConfig) {
+        this.operationConfig = operationConfig;
+        return (A) this;
+    }
+
+    public String getOperationConfig() {
+        return operationConfig;
     }
 
     public A withResult(GenerationResult result) {

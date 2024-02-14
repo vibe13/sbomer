@@ -29,6 +29,7 @@ import org.jboss.sbomer.service.feature.sbom.features.umb.consumer.model.PncBuil
 import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequest;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequestBuilder;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationStatus;
+import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationType;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -80,7 +81,7 @@ public class PncBuildNotificationHandler {
             log.info("Triggering automated SBOM generation for PNC build '{}'' ...", messageBody.getBuild().getId());
 
             GenerationRequest req = new GenerationRequestBuilder()
-                    .withNewDefaultMetadata(messageBody.getBuild().getId())
+                    .withNewDefaultMetadata(messageBody.getBuild().getId(), SbomGenerationType.BUILD)
                     .endMetadata()
                     .withBuildId(messageBody.getBuild().getId())
                     .withStatus(SbomGenerationStatus.NEW)

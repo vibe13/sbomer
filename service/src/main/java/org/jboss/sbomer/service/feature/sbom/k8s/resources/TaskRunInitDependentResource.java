@@ -22,6 +22,7 @@ import java.util.Map;
 import org.jboss.sbomer.service.feature.sbom.config.TektonConfig;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequest;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationPhase;
+import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationType;
 
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.tekton.pipeline.v1beta1.ParamBuilder;
@@ -70,7 +71,7 @@ public class TaskRunInitDependentResource extends CRUDNoGCKubernetesDependentRes
                 SbomGenerationPhase.INIT,
                 generationRequest.getMetadata().getName());
 
-        Map<String, String> labels = Labels.defaultLabelsToMap();
+        Map<String, String> labels = Labels.defaultLabelsToMap(SbomGenerationType.BUILD);
 
         labels.put(Labels.LABEL_BUILD_ID, generationRequest.getBuildId());
         labels.put(Labels.LABEL_PHASE, SbomGenerationPhase.INIT.name().toLowerCase());

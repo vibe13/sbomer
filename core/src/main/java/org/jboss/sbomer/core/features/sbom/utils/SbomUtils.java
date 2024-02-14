@@ -23,12 +23,16 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.maven.model.Dependency;
+import org.apache.maven.model.Model;
 import org.cyclonedx.BomGeneratorFactory;
 import org.cyclonedx.CycloneDxSchema.Version;
 import org.cyclonedx.exception.ParseException;
@@ -43,14 +47,19 @@ import org.cyclonedx.model.Pedigree;
 import org.cyclonedx.model.Property;
 import org.cyclonedx.parsers.JsonParser;
 import org.jboss.pnc.common.Strings;
+import org.jboss.sbomer.core.errors.ApplicationException;
 import org.jboss.sbomer.core.features.sbom.Constants;
 import org.jboss.sbomer.core.features.sbom.config.runtime.Config;
+import org.jboss.sbomer.core.features.sbom.config.runtime.OperationConfig;
+import org.jboss.sbomer.core.features.sbom.utils.maven.MavenPomBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.packageurl.PackageURL;
+import static org.jboss.sbomer.core.features.sbom.utils.maven.MavenUtils.calculateSimilarityOfPurls;
 
 public class SbomUtils {
 
@@ -58,6 +67,27 @@ public class SbomUtils {
 
     public static Version schemaVersion() {
         return Version.VERSION_14;
+    }
+
+    public static Component cloneWithPurl(Component component, PackageURL purl) {
+        Component clone = new Component();
+
+        clone.setAuthor(component.getAuthor());
+        clone.setGroup(component.getGroup());
+        clone.setName(component.getName());
+        clone.setDescription(component.getDescription());
+        clone.setScope(component.getScope());
+        clone.setPublisher(component.getPublisher());
+        clone.setType(component.getType());
+        clone.setLicenseChoice(component.getLicenseChoice());
+        clone.setExternalReferences(component.getExternalReferences());
+        clone.setProperties(component.getProperties());
+
+        clone.setBomRef(purl.toString());
+        clone.setPurl(purl);
+        clone.setVersion(purl.getVersion());
+
+        return clone;
     }
 
     public static boolean hasProperty(Component component, String property) {
@@ -110,6 +140,24 @@ public class SbomUtils {
 
     public static Optional<Component> findComponentWithPurl(String purl, Bom bom) {
         return bom.getComponents().stream().filter(c -> c.getPurl().equals(purl)).findFirst();
+    }
+
+    public static Optional<String> findBestMatchingPurl(PackageURL givenPurl, Bom bom) {
+
+        List<String> purls = bom.getComponents().stream().map(Component::getPurl).collect(Collectors.toList());
+
+        Map<String, Integer> similarityScores = purls.stream()
+                .collect(Collectors.toMap(purl -> purl, purl -> calculateSimilarityOfPurls(givenPurl, purl)));
+
+        // Filter out PURLs with negative similarity score and return the best matching one
+        return similarityScores.entrySet()
+                .stream()
+                .filter(entry -> entry.getValue() >= 0)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList())
+                .stream()
+                .sorted(Comparator.comparingInt(similarityScores::get))
+                .findFirst();
     }
 
     public static Optional<Property> findPropertyWithNameInComponent(String propertyName, Component component) {
@@ -307,6 +355,28 @@ public class SbomUtils {
     }
 
     /**
+     * Converts the {@link JsonNode} into a runtime {@link OperationConfig} object.
+     *
+     * @param jsonNode The {@link JsonNode} to convert.
+     * @return The converted {@link OperationConfig} or <code>null</code> in case of troubles in converting it.
+     */
+    public static OperationConfig fromJsonOperationConfig(JsonNode jsonNode) {
+        if (jsonNode == null) {
+            return null;
+        }
+
+        try {
+            return ObjectMapperProvider.json()
+                    .readValue(
+                            jsonNode.isTextual() ? jsonNode.textValue().getBytes() : jsonNode.toString().getBytes(),
+                            OperationConfig.class);
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
      * Converts the given config {@link Config} into a {@link JsonNode} object.
      *
      * @param config The config {@link Config} to convert
@@ -318,6 +388,25 @@ public class SbomUtils {
             String configuration = ObjectMapperProvider.json()
                     .writerWithDefaultPrettyPrinter()
                     .writeValueAsString(config);
+            return ObjectMapperProvider.json().readTree(configuration);
+        } catch (JsonProcessingException e) {
+            log.error(e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
+     * Converts the given config {@link OperationConfig} into a {@link JsonNode} object.
+     *
+     * @param operationConfig The config {@link OperationConfig} to convert
+     * @return {@link JsonNode} representation of the {@link OperationConfig}.
+     */
+    public static JsonNode toJsonNode(OperationConfig operationConfig) {
+
+        try {
+            String configuration = ObjectMapperProvider.json()
+                    .writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(operationConfig);
             return ObjectMapperProvider.json().readTree(configuration);
         } catch (JsonProcessingException e) {
             log.error(e.getMessage(), e);
@@ -367,5 +456,89 @@ public class SbomUtils {
             removeProperty(bom.getMetadata().getComponent(), Constants.PROPERTY_ERRATA_PRODUCT_VERSION);
             removeProperty(bom.getMetadata().getComponent(), Constants.PROPERTY_ERRATA_PRODUCT_VARIANT);
         }
+    }
+
+    public static void main(String[] args) {
+        Path pom = Path.of(
+                "/home/avibelli/Development/TrustedContent/tests/DelAnalyzer/ZIP_Manifesting/files/sbom-request-a5rphl7y3aiaa-2xjkr-4-operationprepare-1-bom.json");
+        Path bom = Path.of(
+                "/home/avibelli/Development/TrustedContent/tests/DelAnalyzer/ZIP_Manifesting/files/sbom-request-a5rphl7y3aiaa-2xjkr-4-operationprepare-1-pom.xml");
+        Path destinationBom = Path.of(bom.toAbsolutePath().toString().replace("-bom.json", "-bom-enhanced.json"));
+        log.info(
+                "Adjusting any difference between the pom '{}' and the bom '{}'",
+                pom.toAbsolutePath(),
+                bom.toAbsolutePath());
+
+        Bom sbom = SbomUtils.fromPath(bom);
+        if (sbom == null) {
+            throw new ApplicationException("Cannot read the generated SBOM '{}'", bom.toAbsolutePath());
+        }
+        MavenPomBuilder mavenPomBuilder = MavenPomBuilder.build();
+        Model model = mavenPomBuilder.readPomFile(pom);
+        if (model == null) {
+            throw new ApplicationException("Cannot read the created POM '{}'", pom.toAbsolutePath());
+        }
+
+        List<Dependency> dependencies = model.getDependencies();
+        List<Component> components = sbom.getComponents();
+        int depSize = dependencies != null ? dependencies.size() : 0;
+        int compSize = components != null ? components.size() : 0;
+
+        if (depSize != compSize) {
+            log.info(
+                    "The number of components inside the SBOM ({}) is different from the number of dependencies inside the POM ({}), some adjustments need to be made!",
+                    compSize,
+                    depSize);
+            for (int i = 0; i < depSize; i++) {
+                Dependency pomDependency = dependencies.get(i);
+                PackageURL purl = mavenPomBuilder.getPurlOf(pomDependency);
+                if (purl == null) {
+                    // Should never happen, but cannot do much about it, if it happens
+                    continue;
+                }
+
+                Optional<Component> component = SbomUtils.findComponentWithPurl(purl.toString(), sbom);
+                if (component.isPresent()) {
+                    // The dependency is present as a component in the BOM, cool, let's proceed
+                    continue;
+                }
+
+                log.info(
+                        "The dependency with PURL '{}'' was not found in the generated SBOM, adding it manually!",
+                        purl);
+                Optional<String> bestMatchingPurl = SbomUtils.findBestMatchingPurl(purl, sbom);
+                if (!bestMatchingPurl.isPresent()) {
+                    log.warn(
+                            "Could not find a best matching PURL for the purl {}, this component cannot be added!",
+                            purl);
+                    continue;
+                }
+                Component bestMatchingComponent = SbomUtils.findComponentWithPurl(bestMatchingPurl.get(), sbom).get();
+                Component newComponent = SbomUtils.cloneWithPurl(bestMatchingComponent, purl);
+                log.info("Adding new cloned component: {}", newComponent);
+                sbom.addComponent(newComponent);
+
+                org.cyclonedx.model.Dependency bomNewDependency = new org.cyclonedx.model.Dependency(purl.toString());
+                String mainComponentUrl = sbom.getMetadata().getComponent().getBomRef();
+                org.cyclonedx.model.Dependency bomMainDependency = null;
+                if (sbom.getDependencies() != null) {
+                    for (org.cyclonedx.model.Dependency dependency : sbom.getDependencies()) {
+                        if (mainComponentUrl.equals(dependency.getRef())) {
+                            bomMainDependency = dependency;
+                            break;
+                        }
+                    }
+                }
+                if (bomMainDependency == null) {
+                    bomMainDependency = new org.cyclonedx.model.Dependency(mainComponentUrl);
+                }
+                bomMainDependency.addDependency(bomNewDependency);
+                sbom.addDependency(bomNewDependency);
+            }
+
+            // Write the new enhanced SBOM!
+            SbomUtils.toPath(sbom, destinationBom);
+        }
+
     }
 }

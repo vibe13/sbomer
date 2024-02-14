@@ -29,6 +29,7 @@ import org.eclipse.microprofile.reactive.messaging.Metadata;
 import org.jboss.sbomer.core.features.sbom.utils.ObjectMapperProvider;
 import org.jboss.sbomer.service.feature.sbom.config.features.UmbConfig;
 import org.jboss.sbomer.service.feature.sbom.features.umb.consumer.model.PncBuildNotificationMessageBody;
+import org.jboss.sbomer.service.feature.sbom.features.umb.consumer.model.PncDelAnalysisNotificationMessageBody;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -57,6 +58,9 @@ public class AmqpMessageConsumer {
 
     @Inject
     PncBuildNotificationHandler buildNotificationHandler;
+
+    @Inject
+    PncDelAnalysisNotificationHandler delAnalysisNotificationHandler;
 
     private AtomicInteger receivedMessages = new AtomicInteger(0);
     private AtomicInteger processedMessages = new AtomicInteger(0);
@@ -94,6 +98,7 @@ public class AmqpMessageConsumer {
         Optional<IncomingAmqpMetadata> metadata = message.getMetadata(IncomingAmqpMetadata.class);
 
         AtomicBoolean isBuildStateChange = new AtomicBoolean(false);
+        AtomicBoolean isDelAnalysisChange = new AtomicBoolean(false);
 
         metadata.ifPresent(meta -> {
             JsonObject properties = meta.getProperties();
@@ -102,27 +107,45 @@ public class AmqpMessageConsumer {
 
             if (Objects.equals(properties.getString("type"), "BuildStateChange")) {
                 isBuildStateChange.set(true);
+            } else if (Objects.equals(properties.getString("type"), "DeliverableAnalysisStateChange")) {
+                isDelAnalysisChange.set(true);
             }
         });
 
         // This shouldn't happen anymore because we use a selector to filter messages
-        if (isBuildStateChange.get() != true) {
-            log.warn("Received a message that is not BuildStateChange, ignoring it");
+        if (!isBuildStateChange.get() && !isDelAnalysisChange.get()) {
+            log.warn("Received a message that is not BuildStateChange nor DeliverableAnalysisStateChange, ignoring it");
             return message.ack();
         }
 
-        PncBuildNotificationMessageBody body = null;
+        if (isBuildStateChange.get()) {
+            PncBuildNotificationMessageBody body = null;
 
-        try {
-            body = ObjectMapperProvider.json().readValue(message.getPayload(), PncBuildNotificationMessageBody.class);
-        } catch (JsonProcessingException e) {
-            log.error("Unable to deserialize PNC build finished message, this is unexpected", e);
-            return message.nack(e);
+            try {
+                body = ObjectMapperProvider.json()
+                        .readValue(message.getPayload(), PncBuildNotificationMessageBody.class);
+            } catch (JsonProcessingException e) {
+                log.error("Unable to deserialize PNC build finished message, this is unexpected", e);
+                return message.nack(e);
+            }
+
+            log.debug("Message of type 'BuildStateChange' properly deserialized");
+
+            buildNotificationHandler.handle(body);
+        } else {
+            PncDelAnalysisNotificationMessageBody body = null;
+
+            try {
+                body = ObjectMapperProvider.json()
+                        .readValue(message.getPayload(), PncDelAnalysisNotificationMessageBody.class);
+            } catch (JsonProcessingException e) {
+                log.error("Unable to deserialize PNC deliverable analysis finished message, this is unexpected", e);
+                return message.nack(e);
+            }
+
+            log.debug("Message of type 'DeliverableAnalysisStateChange' properly deserialized");
+            delAnalysisNotificationHandler.handle(body);
         }
-
-        log.debug("Message properly deserialized");
-
-        buildNotificationHandler.handle(body);
 
         processedMessages.getAndIncrement();
 

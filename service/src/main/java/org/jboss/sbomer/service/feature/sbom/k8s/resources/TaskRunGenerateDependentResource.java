@@ -32,6 +32,7 @@ import org.jboss.sbomer.core.features.sbom.utils.ObjectMapperProvider;
 import org.jboss.sbomer.service.feature.sbom.config.TektonConfig;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequest;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationPhase;
+import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -135,7 +136,7 @@ public class TaskRunGenerateDependentResource extends KubernetesDependentResourc
                 SbomGenerationPhase.GENERATE,
                 generationRequest.getMetadata().getName());
 
-        Map<String, String> labels = Labels.defaultLabelsToMap();
+        Map<String, String> labels = Labels.defaultLabelsToMap(SbomGenerationType.BUILD);
 
         labels.put(Labels.LABEL_BUILD_ID, generationRequest.getBuildId());
         labels.put(Labels.LABEL_PHASE, SbomGenerationPhase.GENERATE.name().toLowerCase());

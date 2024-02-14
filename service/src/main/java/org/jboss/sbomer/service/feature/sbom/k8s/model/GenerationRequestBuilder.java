@@ -19,6 +19,7 @@ package org.jboss.sbomer.service.feature.sbom.k8s.model;
 
 import java.util.Optional;
 
+import org.jboss.pnc.common.Strings;
 import org.jboss.sbomer.service.feature.sbom.model.RandomStringIdGenerator;
 
 import io.fabric8.kubernetes.api.builder.VisitableBuilder;
@@ -39,6 +40,13 @@ public class GenerationRequestBuilder extends GenerationRequestFluent<Generation
         addToData(
                 GenerationRequest.KEY_STATUS,
                 Optional.ofNullable(getStatus()).orElse(SbomGenerationStatus.NEW).name());
+        addToData(GenerationRequest.KEY_OPERATION_ID, getOperationId());
+        addToData(GenerationRequest.KEY_OPERATION_CONFIG, getOperationConfig());
+
+        addToData(
+                GenerationRequest.KEY_TYPE,
+                Strings.isEmpty(getOperationId()) ? SbomGenerationType.BUILD.toName()
+                        : SbomGenerationType.OPERATION.toName());
 
         GenerationRequest buildable = new GenerationRequest(
                 getApiVersion(),

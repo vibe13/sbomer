@@ -18,7 +18,7 @@
 package org.jboss.sbomer.service.feature.sbom.k8s.model;
 
 public enum SbomGenerationStatus {
-    NEW, INITIALIZING, INITIALIZED, ENV_DETECTING, ENV_DETECTED, GENERATING, FINISHED, FAILED;
+    NEW, INITIALIZING, INITIALIZED, ENV_DETECTING, ENV_DETECTED, PREPARING, PREPARED, GENERATING, FINISHED, FAILED;
 
     public static SbomGenerationStatus fromName(String phase) {
         return SbomGenerationStatus.valueOf(phase.toUpperCase());
@@ -28,13 +28,13 @@ public enum SbomGenerationStatus {
         return this.name().toLowerCase();
     }
 
-    public boolean isOlderThan(SbomGenerationStatus desiredStatus) {
-        if (desiredStatus == null) {
-            return false;
-        }
+    // public boolean isOlderThan(SbomGenerationStatus desiredStatus) {
+    // if (desiredStatus == null) {
+    // return false;
+    // }
 
-        return desiredStatus.ordinal() > this.ordinal();
-    }
+    // return desiredStatus.ordinal() > this.ordinal();
+    // }
 
     public boolean isFinal() {
         if (this.equals(FAILED) || this.equals(FINISHED)) {

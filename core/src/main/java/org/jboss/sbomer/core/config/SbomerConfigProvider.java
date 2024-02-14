@@ -17,9 +17,12 @@
  */
 package org.jboss.sbomer.core.config;
 
+import java.util.Collections;
+
 import org.jboss.sbomer.core.config.DefaultGenerationConfig.DefaultGeneratorConfig;
 import org.jboss.sbomer.core.features.sbom.config.runtime.Config;
 import org.jboss.sbomer.core.features.sbom.config.runtime.DefaultProcessorConfig;
+import org.jboss.sbomer.core.features.sbom.config.runtime.OperationConfig;
 import org.jboss.sbomer.core.features.sbom.config.runtime.GeneratorConfig;
 import org.jboss.sbomer.core.features.sbom.config.runtime.ProductConfig;
 
@@ -75,6 +78,27 @@ public class SbomerConfigProvider {
                 product.getProcessors().add(0, new DefaultProcessorConfig());
             }
         });
+    }
+
+    /**
+     * Adjusts the provided {@link OperationConfig} by providing default values for not provided elements in generators
+     * as well as processors for each defined product.
+     *
+     * @param config The {@link OperationConfig} object to be adjusted.
+     */
+    public void adjust(OperationConfig config) {
+        log.debug("Adjusting deliverable analysis configuration...");
+
+        // Adjusting generator configuration. This is the only thing we can adjust,
+        // because processor configuration is specific to the build and product release.
+        adjustGenerator(config.getProduct());
+
+        config.getProduct().setProcessors(Collections.emptyList());
+        // if (!config.getProduct().hasDefaultProcessor()) {
+        // // Adding default processor as the first one
+        // log.debug("No default processor specified, adding one");
+        // config.getProduct().getProcessors().add(0, new DefaultProcessorConfig());
+        // }
     }
 
     private void adjustGenerator(ProductConfig product) {

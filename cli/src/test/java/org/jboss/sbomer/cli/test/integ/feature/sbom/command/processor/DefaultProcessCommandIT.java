@@ -41,9 +41,11 @@ import org.jboss.pnc.dto.Artifact;
 import org.jboss.pnc.dto.Build;
 import org.jboss.pnc.dto.Environment;
 import org.jboss.pnc.dto.SCMRepository;
+import org.jboss.sbomer.cli.feature.sbom.command.AbstractGenerateCommand;
 import org.jboss.sbomer.cli.feature.sbom.command.AbstractMavenGenerateCommand;
 import org.jboss.sbomer.cli.feature.sbom.command.DefaultProcessCommand;
 import org.jboss.sbomer.cli.feature.sbom.command.GenerateCommand;
+import org.jboss.sbomer.cli.feature.sbom.command.MavenCycloneDxGenerateCommand;
 import org.jboss.sbomer.cli.feature.sbom.command.ProcessCommand;
 import org.jboss.sbomer.cli.feature.sbom.service.PncService;
 import org.jboss.sbomer.core.features.sbom.enums.ProcessorType;
@@ -246,7 +248,7 @@ public class DefaultProcessCommandIT {
     private void stubBuildId(DefaultProcessCommand command) {
         // OMG!
         GenerateCommand mockGenerateCommand = mock(GenerateCommand.class);
-        when(mockGenerateCommand.getBuildId()).thenReturn("BBVVCC");
+        // when(GenerateCommand.getBuildId()).thenReturn("BBVVCC");
         AbstractMavenGenerateCommand mockAbstractMavenGenerateCommand = mock(AbstractMavenGenerateCommand.class);
 
         when(mockAbstractMavenGenerateCommand.getParent()).thenReturn(mockGenerateCommand);

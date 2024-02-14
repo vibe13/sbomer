@@ -29,7 +29,7 @@ mp:
         connector: smallrye-amqp
         enabled: ${sbomer.features.umb.enabled}
         client-options-name: umb
-        selector: "type = 'BuildStateChange' AND newStatus IN ('SUCCESS', 'NO_REBUILD_REQUIRED')"
+        selector: "(type = 'BuildStateChange' AND newStatus IN ('SUCCESS', 'NO_REBUILD_REQUIRED')) OR (type = 'DeliverableAnalysisStateChange' AND  status IN ('FINISHED'))"
         failure-strategy: reject
     outgoing:
       finished:

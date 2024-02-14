@@ -17,12 +17,11 @@
  */
 package org.jboss.sbomer.service.feature.sbom.k8s.resources;
 
-import static org.jboss.sbomer.service.feature.sbom.k8s.reconciler.GenerationRequestReconciler.EVENT_SOURCE_NAME;
-
 import java.util.Optional;
 
 import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequest;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationPhase;
+import org.jboss.sbomer.service.feature.sbom.k8s.reconciler.GenerationRequestReconciler;
 
 import io.fabric8.tekton.pipeline.v1beta1.TaskRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -46,7 +45,7 @@ public abstract class AbstractResourceDiscriminator implements ResourceDiscrimin
 
         InformerEventSource<TaskRun, GenerationRequest> eventSource = (InformerEventSource<TaskRun, GenerationRequest>) context
                 .eventSourceRetriever()
-                .getResourceEventSourceFor(TaskRun.class, EVENT_SOURCE_NAME);
+                .getResourceEventSourceFor(TaskRun.class, GenerationRequestReconciler.EVENT_SOURCE_NAME);
 
         return eventSource
                 .get(new ResourceID(primary.dependentResourceName(getPhase()), primary.getMetadata().getNamespace()));

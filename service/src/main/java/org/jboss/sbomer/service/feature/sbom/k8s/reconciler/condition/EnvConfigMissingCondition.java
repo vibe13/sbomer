@@ -24,13 +24,16 @@ import java.util.Set;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequest;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationPhase;
+import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationType;
 import org.jboss.sbomer.service.feature.sbom.k8s.resources.Labels;
 
 import io.fabric8.tekton.pipeline.v1beta1.TaskRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class EnvConfigMissingCondition implements Condition<TaskRun, GenerationRequest> {
 
     Boolean cleanup = ConfigProvider.getConfig()
@@ -42,11 +45,16 @@ public class EnvConfigMissingCondition implements Condition<TaskRun, GenerationR
             GenerationRequest primary,
             Context<GenerationRequest> context) {
 
+        if (!SbomGenerationType.BUILD.equals(primary.getType())) {
+            return false;
+        }
+
         // Here we are checking whether the environment configuration exists already or not, only of the configuration
         // exists already.
         // In case it's not there, we need to generate one, thus returning true to let the reconciliation happen on the
         // TaskRunEnvDetectDependentResource.
         if (primary.getConfig() != null && primary.getEnvConfig() == null) {
+            log.debug("ConfigMissingCondition is met: true");
             return true;
         }
 
@@ -55,9 +63,11 @@ public class EnvConfigMissingCondition implements Condition<TaskRun, GenerationR
         // this point, the only thing we want to achieve is that the dependent resource (TaskRun) is retained.
         // We should do this only in the case when there are already some secondary resources.
         if (!cleanup && envDetectTaskRunExist(context)) {
+            log.debug("ConfigMissingCondition is met: true");
             return true;
         }
 
+        log.debug("ConfigMissingCondition is met: false");
         return false;
     }
 
