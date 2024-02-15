@@ -36,6 +36,7 @@ import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequest;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequestBuilder;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationPhase;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationStatus;
+import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationType;
 import org.jboss.sbomer.service.feature.sbom.k8s.reconciler.GenerationRequestReconciler;
 import org.jboss.sbomer.service.feature.sbom.k8s.resources.Labels;
 import org.jboss.sbomer.service.feature.sbom.k8s.resources.TaskRunInitDependentResource;
@@ -67,10 +68,11 @@ public class InitializationPhaseGenerationRequestReconcilerIT {
     GenerationRequestReconciler controller;
 
     private GenerationRequest dummyInitializationRequest(SbomGenerationStatus status) throws IOException {
-        return new GenerationRequestBuilder().withNewMetadata()
+        return new GenerationRequestBuilder().withNewDefaultMetadata("AABBCC", SbomGenerationType.BUILD)
                 .withName("test")
                 .endMetadata()
-                .withBuildId("AABBCC")
+                .withIdentifier("AABBCC")
+                .withType(SbomGenerationType.BUILD)
                 .withStatus(status)
                 .build();
     }

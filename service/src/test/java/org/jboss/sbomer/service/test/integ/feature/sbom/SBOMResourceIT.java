@@ -70,7 +70,7 @@ public class SBOMResourceIT {
     @Test
     public void testGetSbomById() throws IOException {
         Sbom sbom = new Sbom();
-        sbom.setBuildId("AAAABBBB");
+        sbom.setIdentifier("AAAABBBB");
         sbom.setId("12345");
 
         Mockito.when(sbomService.get("12345")).thenReturn(sbom);
@@ -82,13 +82,13 @@ public class SBOMResourceIT {
                 .statusCode(200)
                 .body("id", CoreMatchers.equalTo("12345"))
                 .and()
-                .body("buildId", CoreMatchers.equalTo("AAAABBBB"));
+                .body("identifier", CoreMatchers.equalTo("AAAABBBB"));
     }
 
     @Test
     public void testGetBomById() throws IOException {
         Sbom sbom = new Sbom();
-        sbom.setBuildId("AAAABBBB");
+        sbom.setIdentifier("AAAABBBB");
         sbom.setId("12345");
 
         String bomJson = TestResources.asString("sboms/complete_sbom.json");
@@ -125,7 +125,7 @@ public class SBOMResourceIT {
     public void ensureValidLicense() throws IOException {
 
         Sbom sbom = new Sbom();
-        sbom.setBuildId("AAAABBBB");
+        sbom.setIdentifier("AAAABBBB");
         sbom.setId("12345");
 
         String bomJson = TestResources.asString("sboms/complete_sbom.json");

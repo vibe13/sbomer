@@ -177,7 +177,7 @@ public class NotificationService {
                 .findFirst();
 
         Build buildPayload = Build.builder()
-                .id(sbom.getBuildId())
+                .id(sbom.getIdentifier())
                 .buildSystem(pncBuildSystemRef.isPresent() ? BuildSystem.PNC : null)
                 .link(pncBuildSystemRef.isPresent() ? pncBuildSystemRef.get().getUrl() : null)
                 .build();

@@ -31,14 +31,16 @@ public class GenerationRequestBuilder extends GenerationRequestFluent<Generation
     @Override
     public GenerationRequest build() {
         addToData(GenerationRequest.KEY_ID, RandomStringIdGenerator.generate());
-        addToData(GenerationRequest.KEY_BUILD_ID, getBuildId());
+        addToData(GenerationRequest.KEY_IDENTIFIER, getIdentifier());
         addToData(GenerationRequest.KEY_REASON, getReason());
-        addToData(GenerationRequest.KEY_ENV_CONFIG, getEnvConfig());
         addToData(GenerationRequest.KEY_CONFIG, getConfig());
         addToData(GenerationRequest.KEY_REASON, getReason());
         addToData(
                 GenerationRequest.KEY_STATUS,
                 Optional.ofNullable(getStatus()).orElse(SbomGenerationStatus.NEW).name());
+
+        // If the SbomGenerationType is null, default to SbomGenerationType.BUILD
+        addToData(GenerationRequest.KEY_TYPE, Optional.ofNullable(getType()).orElse(SbomGenerationType.BUILD).toName());
 
         GenerationRequest buildable = new GenerationRequest(
                 getApiVersion(),

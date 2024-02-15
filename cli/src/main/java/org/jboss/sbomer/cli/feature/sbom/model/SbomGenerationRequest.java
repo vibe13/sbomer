@@ -20,6 +20,7 @@ package org.jboss.sbomer.cli.feature.sbom.model;
 import java.time.Instant;
 
 import org.jboss.sbomer.core.features.sbom.config.runtime.Config;
+import org.jboss.sbomer.core.features.sbom.config.runtime.OperationConfig;
 import org.jboss.sbomer.core.features.sbom.utils.SbomUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -44,11 +45,23 @@ public class SbomGenerationRequest {
 
     private String id;
     private String buildId;
+    private String operationId;
     private JsonNode config;
     private Instant creationTime;
 
     @JsonIgnore
     public Config getConfiguration() {
-        return SbomUtils.fromJsonConfig(config);
+        if (buildId != null) {
+            return SbomUtils.fromJsonConfig(config);
+        }
+        return null;
+    }
+
+    @JsonIgnore
+    public OperationConfig getOperationConfig() {
+        if (operationId != null) {
+            return SbomUtils.fromJsonOperationConfig(config);
+        }
+        return null;
     }
 }

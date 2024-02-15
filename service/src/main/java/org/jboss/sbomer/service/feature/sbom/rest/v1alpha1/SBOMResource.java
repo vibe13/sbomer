@@ -40,6 +40,7 @@ import org.jboss.sbomer.core.utils.PaginationParameters;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequest;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequestBuilder;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationStatus;
+import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationType;
 import org.jboss.sbomer.service.feature.sbom.model.Sbom;
 import org.jboss.sbomer.service.feature.sbom.model.SbomGenerationRequest;
 import org.jboss.sbomer.service.feature.sbom.service.SbomService;
@@ -81,7 +82,7 @@ public class SBOMResource {
     protected SbomService sbomService;
 
     @Inject
-    KubernetesClient kubernetesClient;
+    protected KubernetesClient kubernetesClient;
 
     @Inject
     ConfigSchemaValidator configSchemaValidator;
@@ -231,9 +232,11 @@ public class SBOMResource {
             log.info("New generation request for build id '{}'", buildId);
             log.debug("Creating GenerationRequest Kubernetes resource...");
 
-            GenerationRequest req = new GenerationRequestBuilder().withNewDefaultMetadata(buildId)
+            GenerationRequest req = new GenerationRequestBuilder()
+                    .withNewDefaultMetadata(buildId, SbomGenerationType.BUILD)
                     .endMetadata()
-                    .withBuildId(buildId)
+                    .withIdentifier(buildId)
+                    .withType(SbomGenerationType.BUILD)
                     .withStatus(SbomGenerationStatus.NEW)
                     .build();
 

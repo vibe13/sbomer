@@ -68,3 +68,4 @@
             productVariant: 8Base-MTR-1
       generator:
         type: maven-cyclonedx
+

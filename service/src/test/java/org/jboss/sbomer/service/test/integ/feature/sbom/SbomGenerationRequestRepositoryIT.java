@@ -42,6 +42,7 @@ import org.jboss.sbomer.core.features.sbom.enums.GeneratorType;
 import org.jboss.sbomer.core.features.sbom.rest.Page;
 import org.jboss.sbomer.core.features.sbom.utils.SbomUtils;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationStatus;
+import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationType;
 import org.jboss.sbomer.service.feature.sbom.model.Sbom;
 import org.jboss.sbomer.service.feature.sbom.model.SbomGenerationRequest;
 import org.jboss.sbomer.service.feature.sbom.rest.QueryParameters;
@@ -117,13 +118,14 @@ public class SbomGenerationRequestRepositoryIT {
         SbomGenerationRequest generationRequest = SbomGenerationRequest.builder()
                 .withConfig(SbomUtils.toJsonNode(runtimeConfig))
                 .withId(REQUEST_ID)
-                .withBuildId(BUILD_ID)
+                .withIdentifier(BUILD_ID)
+                .withType(SbomGenerationType.BUILD)
                 .withStatus(SbomGenerationStatus.FINISHED)
                 .build();
 
         // Not setting rootPurl, as it will be set by PrePersist
         Sbom sbom = new Sbom();
-        sbom.setBuildId(BUILD_ID);
+        sbom.setIdentifier(BUILD_ID);
         sbom.setId("416640206274228333");
         sbom.setSbom(SbomUtils.toJsonNode(bom));
         sbom.setGenerationRequest(generationRequest);
@@ -138,29 +140,29 @@ public class SbomGenerationRequestRepositoryIT {
 
     @Test
     public void testRSQL() {
-        SbomGenerationRequest request = sbomGenerationRequestRepository
-                .search(QueryParameters.builder().rsqlQuery("buildId=eq=" + BUILD_ID).pageIndex(0).pageSize(1).build())
+        SbomGenerationRequest request = sbomGenerationRequestRepository.search(
+                QueryParameters.builder().rsqlQuery("identifier=eq=" + BUILD_ID).pageIndex(0).pageSize(1).build())
                 .get(0);
 
         assertNotNull(request);
         assertNotNull(request.getCreationTime());
         assertEquals(REQUEST_ID, request.getId());
-        assertEquals(BUILD_ID, request.getBuildId());
+        assertEquals(BUILD_ID, request.getIdentifier());
 
-        request = sbomGenerationRequestRepository
-                .search(QueryParameters.builder().rsqlQuery("buildId=eq=" + BUILD_ID).pageIndex(0).pageSize(1).build())
+        request = sbomGenerationRequestRepository.search(
+                QueryParameters.builder().rsqlQuery("identifier=eq=" + BUILD_ID).pageIndex(0).pageSize(1).build())
                 .get(0);
 
         assertNotNull(request);
         assertEquals(REQUEST_ID, request.getId());
-        assertEquals(BUILD_ID, request.getBuildId());
+        assertEquals(BUILD_ID, request.getIdentifier());
         assertEquals("FINISHED".toLowerCase(), request.getStatus().toName());
     }
 
     @Test
     public void testPagination() {
         Page<SbomGenerationRequest> pagedRequest = sbomService
-                .searchSbomRequestsByQueryPaginated(0, 10, "buildId=eq=" + BUILD_ID, null);
+                .searchSbomRequestsByQueryPaginated(0, 10, "identifier=eq=" + BUILD_ID, null);
 
         assertNotNull(pagedRequest);
         assertEquals(0, pagedRequest.getPageIndex());
@@ -171,7 +173,7 @@ public class SbomGenerationRequestRepositoryIT {
         SbomGenerationRequest request = pagedRequest.getContent().iterator().next();
         assertNotNull(request.getCreationTime());
         assertEquals(REQUEST_ID, request.getId());
-        assertEquals(BUILD_ID, request.getBuildId());
+        assertEquals(BUILD_ID, request.getIdentifier());
     }
 
     @Test
@@ -179,7 +181,7 @@ public class SbomGenerationRequestRepositoryIT {
         SbomGenerationRequest request = SbomGenerationRequest.findById(REQUEST_ID);
 
         assertEquals(REQUEST_ID, request.getId());
-        assertEquals(BUILD_ID, request.getBuildId());
+        assertEquals(BUILD_ID, request.getIdentifier());
     }
 
     @Test
@@ -189,13 +191,14 @@ public class SbomGenerationRequestRepositoryIT {
         SbomGenerationRequest generationRequest = SbomGenerationRequest.builder()
                 .withConfig(SbomUtils.toJsonNode(runtimeConfig))
                 .withId(REQUEST_ID_2_DELETE)
-                .withBuildId(BUILD_ID_2_DELETE)
+                .withIdentifier(BUILD_ID_2_DELETE)
+                .withType(SbomGenerationType.BUILD)
                 .withStatus(SbomGenerationStatus.FINISHED)
                 .build();
 
         Sbom sbom = createSBOM();
         sbom.setId("13");
-        sbom.setBuildId(BUILD_ID_2_DELETE);
+        sbom.setIdentifier(BUILD_ID_2_DELETE);
         sbom.setGenerationRequest(generationRequest);
         sbom = sbomRepository.saveSbom(sbom);
 

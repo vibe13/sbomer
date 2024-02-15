@@ -29,6 +29,7 @@ import org.awaitility.Awaitility;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequest;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequestBuilder;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationStatus;
+import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -58,10 +59,12 @@ public class GenerationRequestReconcilerIT {
     void testReconciler() {
         operator.start();
 
-        GenerationRequest request = new GenerationRequestBuilder().withNewMetadata()
+        GenerationRequest request = new GenerationRequestBuilder()
+                .withNewDefaultMetadata("AABBCC", SbomGenerationType.BUILD)
                 .withName("test")
                 .endMetadata()
-                .withBuildId("AABBCC")
+                .withIdentifier("AABBCC")
+                .withType(SbomGenerationType.BUILD)
                 .build();
 
         GenerationRequest created = client.resource(request).create();

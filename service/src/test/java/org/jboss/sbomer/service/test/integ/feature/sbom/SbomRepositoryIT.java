@@ -59,7 +59,7 @@ public class SbomRepositoryIT {
 
     @Test
     public void testNonNullRootComponents() {
-        String rsqlQuery = "buildId=eq=ARYT3LBXDVYAC";
+        String rsqlQuery = "identifier=eq=ARYT3LBXDVYAC";
         Sbom sbom = sbomRepository.search(QueryParameters.builder().pageSize(1).rsqlQuery(rsqlQuery).build()).get(0);
 
         assertNotNull(sbom.getRootPurl());
@@ -70,7 +70,7 @@ public class SbomRepositoryIT {
 
     @Test
     public void testValidBom() throws JsonProcessingException, JsonMappingException {
-        String rsqlQuery = "buildId=eq=ARYT3LBXDVYAC";
+        String rsqlQuery = "identifier=eq=ARYT3LBXDVYAC";
         Sbom sbom = sbomRepository.search(QueryParameters.builder().pageSize(1).rsqlQuery(rsqlQuery).build()).get(0);
         Bom bom = sbom.getCycloneDxBom();
 
@@ -81,7 +81,7 @@ public class SbomRepositoryIT {
                 "pkg:maven/org.eclipse.microprofile.graphql/microprofile-graphql-spec@1.1.0.redhat-00008?type=pom",
                 firstComponent.getPurl());
         assertEquals("416640206274228224", sbom.getId());
-        assertEquals("ARYT3LBXDVYAC", sbom.getBuildId());
+        assertEquals("ARYT3LBXDVYAC", sbom.getIdentifier());
 
         Set<ConstraintViolation<Sbom>> violations = validator.validate(sbom);
         if (!violations.isEmpty()) {
@@ -95,7 +95,7 @@ public class SbomRepositoryIT {
 
     @Test
     public void testValidConfiguration() throws JsonProcessingException, JsonMappingException {
-        String rsqlQuery = "buildId=eq=ARYT3LBXDVYAC";
+        String rsqlQuery = "identifier=eq=ARYT3LBXDVYAC";
         Sbom sbom = sbomRepository.search(QueryParameters.builder().pageSize(10).rsqlQuery(rsqlQuery).build()).get(0);
 
         assertEquals("416640206274228224", sbom.getId());
@@ -136,7 +136,7 @@ public class SbomRepositoryIT {
         Sbom sbom = sbomRepository.findById("416640206274228224");
 
         assertEquals("416640206274228224", sbom.getId());
-        assertEquals("ARYT3LBXDVYAC", sbom.getBuildId());
+        assertEquals("ARYT3LBXDVYAC", sbom.getIdentifier());
     }
 
 }

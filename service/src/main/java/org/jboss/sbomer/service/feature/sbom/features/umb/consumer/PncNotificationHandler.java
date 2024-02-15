@@ -17,15 +17,21 @@
  */
 package org.jboss.sbomer.service.feature.sbom.features.umb.consumer;
 
+import org.eclipse.microprofile.reactive.messaging.Message;
 import org.jboss.pnc.api.enums.BuildStatus;
 import org.jboss.pnc.api.enums.BuildType;
 import org.jboss.pnc.api.enums.ProgressStatus;
 import org.jboss.pnc.common.Strings;
+import org.jboss.sbomer.core.features.sbom.utils.ObjectMapperProvider;
 import org.jboss.sbomer.service.feature.sbom.config.features.UmbConfig;
 import org.jboss.sbomer.service.feature.sbom.features.umb.consumer.model.PncBuildNotificationMessageBody;
+import org.jboss.sbomer.service.feature.sbom.features.umb.consumer.model.PncDelAnalysisNotificationMessageBody;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequest;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequestBuilder;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationStatus;
+import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationType;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -40,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @ApplicationScoped
 @Slf4j
-public class PncBuildNotificationHandler {
+public class PncNotificationHandler {
 
     @Inject
     UmbConfig config;
@@ -48,16 +54,37 @@ public class PncBuildNotificationHandler {
     @Inject
     KubernetesClient kubernetesClient;
 
+    public void handle(Message<String> message, AmqpMessageConsumer.MessageType type) throws JsonProcessingException {
+
+        switch (type) {
+            case BUILD:
+                PncBuildNotificationMessageBody buildMsgBody = ObjectMapperProvider.json()
+                        .readValue(message.getPayload(), PncBuildNotificationMessageBody.class);
+                handle(buildMsgBody);
+                break;
+
+            case DEL_ANALYSIS:
+                PncDelAnalysisNotificationMessageBody delAnalysisMsgBody = ObjectMapperProvider.json()
+                        .readValue(message.getPayload(), PncDelAnalysisNotificationMessageBody.class);
+                handle(delAnalysisMsgBody);
+                break;
+            default:
+                break;
+        }
+    }
+
     /**
      * Handles a particular message received from PNC after the build is finished.
      *
      * @param messageBody the body of the PNC build notification.
      */
-    public void handle(PncBuildNotificationMessageBody messageBody) {
+    private void handle(PncBuildNotificationMessageBody messageBody) {
         if (messageBody == null) {
             log.warn("Received message does not contain body, ignoring");
             return;
         }
+
+        log.debug("Message of type 'BuildStateChange' properly deserialized");
 
         if (Strings.isEmpty(messageBody.getBuild().getId())) {
             log.warn("Received message without PNC Build ID specified");
@@ -68,9 +95,10 @@ public class PncBuildNotificationHandler {
             log.info("Triggering automated SBOM generation for PNC build '{}'' ...", messageBody.getBuild().getId());
 
             GenerationRequest req = new GenerationRequestBuilder()
-                    .withNewDefaultMetadata(messageBody.getBuild().getId())
+                    .withNewDefaultMetadata(messageBody.getBuild().getId(), SbomGenerationType.BUILD)
                     .endMetadata()
-                    .withBuildId(messageBody.getBuild().getId())
+                    .withIdentifier(messageBody.getBuild().getId())
+                    .withType(SbomGenerationType.BUILD)
                     .withStatus(SbomGenerationStatus.NEW)
                     .build();
 
@@ -82,7 +110,44 @@ public class PncBuildNotificationHandler {
         }
     }
 
-    public boolean isSuccessfulPersistentBuild(PncBuildNotificationMessageBody msgBody) {
+    /**
+     * Handles a particular message received from PNC after the deliverable analysis is finished.
+     *
+     * @param messageBody the body of the PNC build notification.
+     */
+    private void handle(PncDelAnalysisNotificationMessageBody messageBody) {
+        if (messageBody == null) {
+            log.warn("Received message does not contain body, ignoring");
+            return;
+        }
+
+        log.debug("Message of type 'DeliverableAnalysisStateChange' properly deserialized");
+
+        if (Strings.isEmpty(messageBody.getOperationId())) {
+            log.warn("Received message without PNC Operation ID specified");
+            return;
+        }
+
+        if (isFinishedAnalysis(messageBody)) {
+
+            log.info("Triggering automated SBOM generation for PNC build '{}'' ...", messageBody.getOperationId());
+            GenerationRequest req = new GenerationRequestBuilder()
+                    .withNewDefaultMetadata(messageBody.getOperationId(), SbomGenerationType.OPERATION)
+                    .endMetadata()
+                    .withIdentifier(messageBody.getOperationId())
+                    .withType(SbomGenerationType.OPERATION)
+                    .withStatus(SbomGenerationStatus.NEW)
+                    .build();
+
+            log.debug("ConfigMap to create: '{}'", req);
+
+            ConfigMap cm = kubernetesClient.configMaps().resource(req).create();
+
+            log.info("Request created: {}", cm.getMetadata().getName());
+        }
+    }
+
+    private boolean isSuccessfulPersistentBuild(PncBuildNotificationMessageBody msgBody) {
         log.info(
                 "Received UMB message notification for {} build {}, with status {}, progress {} and build type {}",
                 msgBody.getBuild().isTemporaryBuild() ? "temporary" : "persistent",
@@ -97,6 +162,20 @@ public class PncBuildNotificationHandler {
                 && (BuildType.MVN.equals(msgBody.getBuild().getBuildConfigRevision().getBuildType())
                         || BuildType.GRADLE.equals(msgBody.getBuild().getBuildConfigRevision().getBuildType())
                         || BuildType.NPM.equals(msgBody.getBuild().getBuildConfigRevision().getBuildType()))) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean isFinishedAnalysis(PncDelAnalysisNotificationMessageBody msgBody) {
+        log.info(
+                "Received UMB message notification operation {}, with status {} and deliverable urls {}",
+                msgBody.getOperationId(),
+                msgBody.getStatus(),
+                String.join(";", msgBody.getDeliverablesUrls()));
+
+        if (ProgressStatus.FINISHED.equals(msgBody.getStatus())) {
             return true;
         }
 

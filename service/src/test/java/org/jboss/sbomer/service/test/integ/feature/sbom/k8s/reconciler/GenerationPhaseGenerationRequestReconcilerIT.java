@@ -43,6 +43,7 @@ import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequest;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequestBuilder;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationPhase;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationStatus;
+import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationType;
 import org.jboss.sbomer.service.feature.sbom.k8s.reconciler.GenerationRequestReconciler;
 import org.jboss.sbomer.service.feature.sbom.k8s.resources.Labels;
 import org.junit.jupiter.api.Test;
@@ -102,10 +103,10 @@ public class GenerationPhaseGenerationRequestReconcilerIT {
         return new GenerationRequestBuilder().withNewMetadata()
                 .withName("test-generation-request")
                 .endMetadata()
-                .withBuildId("AABBCC")
+                .withIdentifier("AABBCC")
+                .withType(SbomGenerationType.BUILD)
                 .withStatus(SbomGenerationStatus.GENERATING)
                 .withConfig(TestResources.asString("configs/multi-product.yaml"))
-                .withEnvConfig(TestResources.asString("configs/env-config.yaml"))
                 .build();
     }
 

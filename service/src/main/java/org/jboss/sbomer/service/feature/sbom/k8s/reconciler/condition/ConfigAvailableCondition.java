@@ -23,7 +23,9 @@ import io.fabric8.tekton.pipeline.v1beta1.TaskRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ConfigAvailableCondition implements Condition<TaskRun, GenerationRequest> {
 
     @Override
@@ -34,9 +36,11 @@ public class ConfigAvailableCondition implements Condition<TaskRun, GenerationRe
 
         // If configuration is available, reconcile
         if (primary.getConfig() != null) {
+            log.trace("ConfigAvailableCondition is met: true");
             return true;
         }
 
+        log.trace("ConfigAvailableCondition is met: false");
         return false;
     }
 }

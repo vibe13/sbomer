@@ -79,9 +79,9 @@ public class Sbom extends PanacheEntityBase {
     @Column(nullable = false, updatable = false)
     private String id;
 
-    @Column(name = "build_id", nullable = false, updatable = false)
-    @NotBlank(message = "Build identifier missing")
-    private String buildId;
+    @Column(name = "identifier", nullable = false, updatable = false)
+    @NotBlank(message = "Identifier missing")
+    private String identifier;
 
     @Column(name = "root_purl")
     private String rootPurl;
