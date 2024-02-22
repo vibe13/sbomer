@@ -17,7 +17,6 @@
  */
 package org.jboss.sbomer.service.feature.sbom.k8s.resources;
 
-import java.io.IOException;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +32,6 @@ import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationPhase;
 import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.fabric8.kubernetes.api.model.Duration;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
@@ -67,8 +65,6 @@ public class TaskRunOperationGenerateDependentResource extends KubernetesDepende
      * The index of the deliverable within the configuration.
      */
     public static final String PARAM_COMMAND_DELIVERABLE_INDEX_NAME = "deliverable-index";
-
-    ObjectMapper objectMapper = ObjectMapperProvider.yaml();
 
     @Inject
     TektonConfig tektonConfig;
@@ -126,7 +122,7 @@ public class TaskRunOperationGenerateDependentResource extends KubernetesDepende
         String configStr;
 
         try {
-            configStr = objectMapper.writeValueAsString(config);
+            configStr = ObjectMapperProvider.json().writeValueAsString(config);
         } catch (JsonProcessingException e) {
             throw new ApplicationException("Could not serialize runtime configuration into YAML", e);
         }

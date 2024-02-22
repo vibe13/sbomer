@@ -44,14 +44,14 @@ import lombok.extern.jackson.Jacksonized;
 public class SbomGenerationRequest {
 
     private String id;
-    private String buildId;
-    private String operationId;
+    private String identifier;
+    private String type;
     private JsonNode config;
     private Instant creationTime;
 
     @JsonIgnore
     public Config getConfiguration() {
-        if (buildId != null) {
+        if (type != null && identifier != null && "BUILD".equalsIgnoreCase(type)) {
             return SbomUtils.fromJsonConfig(config);
         }
         return null;
@@ -59,7 +59,7 @@ public class SbomGenerationRequest {
 
     @JsonIgnore
     public OperationConfig getOperationConfig() {
-        if (operationId != null) {
+        if (type != null && identifier != null && "OPERATION".equalsIgnoreCase(type)) {
             return SbomUtils.fromJsonOperationConfig(config);
         }
         return null;

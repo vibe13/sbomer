@@ -15,15 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jboss.sbomer.service.feature.sbom.k8s.resources;
+package org.jboss.sbomer.cli.feature.sbom.model;
 
-import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationPhase;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-public class EnvDetectResourceDiscriminator extends AbstractResourceDiscriminator {
+import lombok.Builder;
+import lombok.Data;
+import lombok.extern.jackson.Jacksonized;
 
-    @Override
-    protected SbomGenerationPhase getPhase() {
-        return SbomGenerationPhase.DETECTENVINFO;
-    }
+/**
+ * This is a just-enough representation of the {@link org.jboss.sbomer.service.feature.sbom.model.Stats} class that is
+ * required for processing. This is used by the {@link org.jboss.sbomer.cli.feature.sbom.client.SBOMerClient} REST
+ * client.
+ */
+@Data
+@Builder
+@Jacksonized
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class Stats {
+    private String version;
 
 }

@@ -18,6 +18,7 @@
 package org.jboss.sbomer.service.feature.sbom.k8s.reconciler.condition;
 
 import org.jboss.sbomer.service.feature.sbom.k8s.model.GenerationRequest;
+import org.jboss.sbomer.service.feature.sbom.k8s.model.SbomGenerationType;
 
 import io.fabric8.tekton.pipeline.v1beta1.TaskRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -33,6 +34,10 @@ public class ConfigAvailableCondition implements Condition<TaskRun, GenerationRe
             DependentResource<TaskRun, GenerationRequest> dependentResource,
             GenerationRequest primary,
             Context<GenerationRequest> context) {
+
+        if (!SbomGenerationType.BUILD.equals(primary.getType())) {
+            return false;
+        }
 
         // If configuration is available, reconcile
         if (primary.getConfig() != null) {

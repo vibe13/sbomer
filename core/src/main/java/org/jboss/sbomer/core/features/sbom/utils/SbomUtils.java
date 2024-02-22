@@ -45,20 +45,25 @@ import org.cyclonedx.model.Component.Scope;
 import org.cyclonedx.model.Component.Type;
 import org.cyclonedx.model.ExternalReference;
 import org.cyclonedx.model.Hash;
+import org.cyclonedx.model.License;
 import org.cyclonedx.model.LicenseChoice;
 import org.cyclonedx.model.Hash.Algorithm;
 import org.cyclonedx.model.Metadata;
 import org.cyclonedx.model.OrganizationalEntity;
 import org.cyclonedx.model.Pedigree;
 import org.cyclonedx.model.Property;
+import org.cyclonedx.model.Tool;
 import org.cyclonedx.parsers.JsonParser;
 import org.jboss.pnc.common.Strings;
 import org.jboss.pnc.dto.Artifact;
 import org.jboss.pnc.dto.Build;
+import org.jboss.pnc.dto.DeliverableAnalyzerOperation;
 import org.jboss.pnc.enums.BuildType;
 import org.jboss.sbomer.core.features.sbom.Constants;
 import org.jboss.sbomer.core.features.sbom.config.runtime.Config;
 import org.jboss.sbomer.core.features.sbom.config.runtime.OperationConfig;
+import org.jboss.sbomer.core.features.sbom.config.runtime.ProductConfig;
+import org.jboss.sbomer.core.features.sbom.config.runtime.RedHatProductProcessorConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,9 +71,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import static org.jboss.sbomer.core.features.sbom.Constants.SBOMER_LICENSE_ID;
+import static org.jboss.sbomer.core.features.sbom.Constants.SBOMER_NAME;
+import static org.jboss.sbomer.core.features.sbom.Constants.SBOMER_WEBSITE;
+import static org.jboss.sbomer.core.features.sbom.Constants.SBOMER_GIT_URL;
+import static org.jboss.sbomer.core.features.sbom.Constants.PUBLISHER;
 import static org.jboss.sbomer.core.features.sbom.Constants.SBOM_RED_HAT_BREW_BUILD_ID;
 import static org.jboss.sbomer.core.features.sbom.Constants.SBOM_RED_HAT_ENVIRONMENT_IMAGE;
 import static org.jboss.sbomer.core.features.sbom.Constants.SBOM_RED_HAT_PNC_BUILD_ID;
+import static org.jboss.sbomer.core.features.sbom.Constants.SBOM_RED_HAT_PNC_OPERATION_ID;
+import static org.jboss.sbomer.core.features.sbom.Constants.PROPERTY_ERRATA_PRODUCT_NAME;
+import static org.jboss.sbomer.core.features.sbom.Constants.PROPERTY_ERRATA_PRODUCT_VARIANT;
+import static org.jboss.sbomer.core.features.sbom.Constants.PROPERTY_ERRATA_PRODUCT_VERSION;
 
 public class SbomUtils {
 
@@ -177,12 +191,30 @@ public class SbomUtils {
                     && pncBuild.getScmBuildConfigRevisionInternal() != null
                     && !Boolean.valueOf(pncBuild.getScmBuildConfigRevisionInternal())
                     && pncBuild.getScmBuildConfigRevision() != null) {
+
                 addPedigreeCommit(
                         component,
                         pncBuild.getScmRepository().getExternalUrl() + "#"
                                 + pncBuild.getBuildConfigRevision().getScmRevision(),
                         pncBuild.getScmBuildConfigRevision());
             }
+        }
+
+        return component;
+    }
+
+    public static Component setPncOperationMetadata(
+            Component component,
+            DeliverableAnalyzerOperation operation,
+            String pncApiUrl) {
+        if (operation != null) {
+
+            addExternalReference(
+                    component,
+                    ExternalReference.Type.BUILD_SYSTEM,
+                    "https://" + pncApiUrl + "/pnc-rest/v2/operations/deliverable-analyzer/"
+                            + operation.getId().toString(),
+                    SBOM_RED_HAT_PNC_OPERATION_ID);
         }
 
         return component;
@@ -218,6 +250,29 @@ public class SbomUtils {
         return component;
     }
 
+    public static void setProductMetadata(Component component, OperationConfig config) {
+        Optional.ofNullable(config.getProduct())
+                .map(ProductConfig::getProcessors)
+                .ifPresent(
+                        processors -> processors.stream()
+                                .filter(RedHatProductProcessorConfig.class::isInstance)
+                                .map(RedHatProductProcessorConfig.class::cast)
+                                .forEach(processorConfig -> {
+                                    addPropertyIfMissing(
+                                            component,
+                                            PROPERTY_ERRATA_PRODUCT_NAME,
+                                            processorConfig.getErrata().getProductName());
+                                    addPropertyIfMissing(
+                                            component,
+                                            PROPERTY_ERRATA_PRODUCT_VERSION,
+                                            processorConfig.getErrata().getProductVersion());
+                                    addPropertyIfMissing(
+                                            component,
+                                            PROPERTY_ERRATA_PRODUCT_VARIANT,
+                                            processorConfig.getErrata().getProductVariant());
+                                }));
+    }
+
     public static Component createComponent(Artifact artifact, Scope scope, Type type, BuildType buildType) {
 
         Component component = new Component();
@@ -241,11 +296,36 @@ public class SbomUtils {
         return component;
     }
 
-    public static Metadata createMetadata(Component component) {
+    public static Metadata createDefaultSbomerMetadata(Component component, String version) {
         Metadata metadata = new Metadata();
         metadata.setComponent(component);
         metadata.setTimestamp(Date.from(Instant.now()));
+
+        LicenseChoice licenseChoice = new LicenseChoice();
+        License license = new License();
+        license.setId(SBOMER_LICENSE_ID);
+        licenseChoice.setLicenses(List.of(license));
+        metadata.setLicenseChoice(licenseChoice);
+
+        Property vcs = new Property();
+        vcs.setName(ExternalReference.Type.VCS.name());
+        vcs.setValue(SBOMER_GIT_URL);
+        Property website = new Property();
+        website.setName(ExternalReference.Type.WEBSITE.name());
+        website.setValue(SBOMER_WEBSITE);
+        metadata.setProperties(List.of(vcs, website));
+        metadata.setTools(List.of(createTool(version)));
+
         return metadata;
+    }
+
+    public static Tool createTool(String version) {
+        Tool tool = new Tool();
+        tool.setName(SBOMER_NAME);
+        tool.setVendor(PUBLISHER);
+        tool.setVersion(version);
+
+        return tool;
     }
 
     public static Dependency createDependency(String ref) {

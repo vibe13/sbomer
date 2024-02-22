@@ -59,10 +59,10 @@ spec:
           export QUARKUS_OIDC_CLIENT_CREDENTIALS_SECRET="$(cat /mnt/secrets/${SBOMER_SECRET_NAME}-${APP_ENV}/pnc-sbomer-client.secret)"
         fi
 
-        CONFIG_PATH="/workdir/optional-config.yaml"
-        echo "$(params.config)" | tee $CONFIG_PATH
+        CONFIG_PATH="${HOME}/optional-config.json"
+        echo '$(params.config)' | tee $CONFIG_PATH
 
-        exec /workdir/.sdkman/candidates/java/17/bin/java -jar ./generator/quarkus-run.jar -v sbom auto generate-operation-config --operation-id "$(params.operation-id)" --config $CONFIG_PATH --format yaml --target "$(results.operation-config.path)"
+        exec /workdir/.sdkman/candidates/java/17/bin/java -jar ./generator/quarkus-run.jar -v sbom auto generate-operation-config --operation-id "$(params.operation-id)" --config $CONFIG_PATH --format json --target "$(results.operation-config.path)"
 
       volumeMounts:
         - name: secrets-workdir

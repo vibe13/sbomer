@@ -20,7 +20,10 @@ package org.jboss.sbomer.cli.feature.sbom.command;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
 
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.pnc.dto.DeliverableAnalyzerOperation;
+import org.jboss.sbomer.cli.feature.sbom.client.SBOMerClient;
+import org.jboss.sbomer.cli.feature.sbom.client.facade.SBOMerClientFacade;
 import org.jboss.sbomer.cli.feature.sbom.command.mixin.GeneratorToolMixin;
 import org.jboss.sbomer.cli.feature.sbom.service.KojiService;
 import org.jboss.sbomer.cli.feature.sbom.service.PncService;
@@ -48,6 +51,9 @@ public abstract class AbstractGenerateOperationCommand implements Callable<Integ
 
     @Inject
     protected KojiService kojiService;
+
+    @Inject
+    protected SBOMerClientFacade sbomerClientFacade;
 
     /**
      * <p>

@@ -67,7 +67,7 @@ import lombok.extern.slf4j.Slf4j;
 @ToString
 @Table(
         name = "sbom_generation_request",
-        indexes = { @Index(name = "idx_request_buildid", columnList = "build_id"),
+        indexes = { @Index(name = "idx_request_identifier", columnList = "identifier"),
                 @Index(name = "idx_request_status", columnList = "status") })
 @Slf4j
 @NoArgsConstructor

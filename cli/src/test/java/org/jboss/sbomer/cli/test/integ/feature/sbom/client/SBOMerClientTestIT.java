@@ -56,11 +56,11 @@ public class SBOMerClientTestIT {
         Sbom sbom = response.readEntity(Sbom.class);
         assertNotNull(sbom);
         assertEquals("123", sbom.getId());
-        assertEquals("QUARKUS", sbom.getBuildId());
+        assertEquals("QUARKUS", sbom.getIdentifier());
         assertNotNull(sbom.getGenerationRequest());
         assertEquals("AABBCC", sbom.getGenerationRequest().getId());
-        assertEquals("QUARKUS", sbom.getGenerationRequest().getBuildId());
-
+        assertEquals("QUARKUS", sbom.getGenerationRequest().getIdentifier());
+        assertEquals("BUILD", sbom.getGenerationRequest().getType());
     }
 
     @Test
@@ -86,7 +86,7 @@ public class SBOMerClientTestIT {
             Page<Sbom> sboms = objectMapper.readValue(json, typeReference);
             assertNotNull(sboms);
             assertEquals("123", sboms.getContent().iterator().next().getId());
-            assertEquals("QUARKUS", sboms.getContent().iterator().next().getBuildId());
+            assertEquals("QUARKUS", sboms.getContent().iterator().next().getIdentifier());
         } catch (JsonMappingException e) {
             fail(e.getMessage());
         } catch (JsonProcessingException e) {
@@ -100,7 +100,7 @@ public class SBOMerClientTestIT {
         pagParams.setPageIndex(0);
         pagParams.setPageSize(20);
 
-        String rsqlQuery = "buildId=eq=QUARKUS;generationRequest.buildId=eq=QUARKUS;generationRequest.status=eq=FINISHED;generationRequest.result=eq=SUCCESS";
+        String rsqlQuery = "identifier=eq=QUARKUS;generationRequest.identifier=eq=QUARKUS;generationRequest.status=eq=FINISHED;generationRequest.result=eq=SUCCESS;generationRequest.type=eq=BUILD";
         String sortQuery = "creationTime=desc=";
         Response response = client.searchSboms("QUARKUS", pagParams, rsqlQuery, sortQuery);
         String json = response.readEntity(String.class);
@@ -111,8 +111,8 @@ public class SBOMerClientTestIT {
             Page<Sbom> sboms = objectMapper.readValue(json, typeReference);
             assertNotNull(sboms);
             assertEquals("123", sboms.getContent().iterator().next().getId());
-            assertEquals("QUARKUS", sboms.getContent().iterator().next().getBuildId());
-            assertEquals("QUARKUS", sboms.getContent().iterator().next().getGenerationRequest().getBuildId());
+            assertEquals("QUARKUS", sboms.getContent().iterator().next().getIdentifier());
+            assertEquals("QUARKUS", sboms.getContent().iterator().next().getGenerationRequest().getIdentifier());
 
         } catch (JsonMappingException e) {
             fail(e.getMessage());
@@ -137,7 +137,7 @@ public class SBOMerClientTestIT {
             Page<SbomGenerationRequest> sbomRequests = objectMapper.readValue(json, typeReference);
             assertNotNull(sbomRequests);
             assertEquals("AABBCC", sbomRequests.getContent().iterator().next().getId());
-            assertEquals("QUARKUS", sbomRequests.getContent().iterator().next().getBuildId());
+            assertEquals("QUARKUS", sbomRequests.getContent().iterator().next().getIdentifier());
         } catch (JsonMappingException e) {
             fail(e.getMessage());
         } catch (JsonProcessingException e) {

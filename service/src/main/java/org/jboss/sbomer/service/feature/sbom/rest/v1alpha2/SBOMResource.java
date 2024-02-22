@@ -239,7 +239,7 @@ public class SBOMResource extends org.jboss.sbomer.service.feature.sbom.rest.v1a
             throws Exception {
 
         log.info("New generation request for operation id '{}'", operationId);
-        log.debug("Creating ZipGenerationRequest Kubernetes resource...");
+        log.debug("Creating GenerationRequest Kubernetes resource...");
 
         GenerationRequest req = new GenerationRequestBuilder()
                 .withNewDefaultMetadata(operationId, SbomGenerationType.OPERATION)
@@ -251,18 +251,15 @@ public class SBOMResource extends org.jboss.sbomer.service.feature.sbom.rest.v1a
 
         if (config != null) {
             log.debug("Received product configuration...");
-
             SbomerConfigProvider sbomerConfigProvider = SbomerConfigProvider.getInstance();
             sbomerConfigProvider.adjust(config);
             config.setOperationId(operationId);
 
-            // ValidationResult validationResult = operationConfigSchemaValidator.validate(config);
+            ValidationResult validationResult = operationConfigSchemaValidator.validate(config);
 
-            // if (!validationResult.isValid()) {
-            // throw new ValidationException(
-            // "Provided deliverable analysis config is not valid",
-            // validationResult.getErrors());
-            // }
+            if (!validationResult.isValid()) {
+                throw new ValidationException("Provided operation config is not valid", validationResult.getErrors());
+            }
 
             // Because the config is valid, use it and set the status to initialized
             req.setStatus(SbomGenerationStatus.NEW);

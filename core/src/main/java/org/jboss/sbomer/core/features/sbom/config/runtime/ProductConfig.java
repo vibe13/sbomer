@@ -107,24 +107,6 @@ public class ProductConfig {
 
         command.add(generator.getType().toString().toLowerCase().replace("_", "-"));
 
-        if (generator.getVersion() != null) {
-            command.add("--tool-version");
-            command.add(generator.getVersion());
-        }
-
-        if (generator.getArgs() != null) {
-            command.add("--tool-args");
-            command.add(generator.getArgs());
-        }
-
-        if (processors.size() > 0) {
-            command.add("process");
-
-            processors.forEach(processor -> {
-                command.addAll(processor.toCommand());
-            });
-        }
-
         return command;
     }
 }

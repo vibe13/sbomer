@@ -279,8 +279,8 @@ public class SBOMResource {
             name = "query",
             description = "A RSQL query to search the generation requests",
             examples = { @ExampleObject(
-                    name = "Find all SBOM generation requests with provided buildId",
-                    value = "buildId=eq=ABCDEFGHIJKLM") })
+                    name = "Find all SBOM generation requests with provided identifier",
+                    value = "identifier=eq=ABCDEFGHIJKLM") })
     @Parameter(
             name = "sort",
             description = "Optional RSQL sort",

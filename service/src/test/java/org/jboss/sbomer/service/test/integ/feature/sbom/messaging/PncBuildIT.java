@@ -84,7 +84,9 @@ public class PncBuildIT {
 
         builds.send(txgMsg);
 
-        ArgumentCaptor<Message> argumentCaptor = ArgumentCaptor.forClass(Message.class);
+        ArgumentCaptor<Message<String>> msgArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+        ArgumentCaptor<AmqpMessageConsumer.MessageType> msgTypeArgumentCaptor = ArgumentCaptor
+                .forClass(AmqpMessageConsumer.MessageType.class);
 
         Awaitility.await().atMost(30, TimeUnit.SECONDS).pollInterval(1, TimeUnit.SECONDS).until(() -> {
             List<ConfigMap> configMaps = kubernetesClient.configMaps().list().getItems();
@@ -101,10 +103,13 @@ public class PncBuildIT {
             return false;
         });
 
-        verify(handler, times(1)).handle(argumentCaptor.capture(), AmqpMessageConsumer.MessageType.BUILD);
-        List<Message> messages = argumentCaptor.getAllValues();
+        verify(handler, times(1)).handle(msgArgumentCaptor.capture(), msgTypeArgumentCaptor.capture());
+        List<Message<String>> messages = msgArgumentCaptor.getAllValues();
+        List<AmqpMessageConsumer.MessageType> messageTypes = msgTypeArgumentCaptor.getAllValues();
 
         assertEquals(1, messages.size());
+        assertEquals(1, messageTypes.size());
+        assertEquals(AmqpMessageConsumer.MessageType.BUILD, messageTypes.get(0));
 
         PncBuildNotificationMessageBody buildMsgBody = ObjectMapperProvider.json()
                 .readValue(String.valueOf(messages.get(0).getPayload()), PncBuildNotificationMessageBody.class);
@@ -122,7 +127,9 @@ public class PncBuildIT {
 
         builds.send(txgMsg);
 
-        ArgumentCaptor<Message> argumentCaptor = ArgumentCaptor.forClass(Message.class);
+        ArgumentCaptor<Message<String>> msgArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+        ArgumentCaptor<AmqpMessageConsumer.MessageType> msgTypeArgumentCaptor = ArgumentCaptor
+                .forClass(AmqpMessageConsumer.MessageType.class);
 
         Awaitility.await().atMost(30, TimeUnit.SECONDS).pollInterval(1, TimeUnit.SECONDS).until(() -> {
             List<ConfigMap> configMaps = kubernetesClient.configMaps().list().getItems();
@@ -139,10 +146,13 @@ public class PncBuildIT {
             return false;
         });
 
-        verify(handler, times(1)).handle(argumentCaptor.capture(), AmqpMessageConsumer.MessageType.DEL_ANALYSIS);
-        List<Message> messages = argumentCaptor.getAllValues();
+        verify(handler, times(1)).handle(msgArgumentCaptor.capture(), msgTypeArgumentCaptor.capture());
+        List<Message<String>> messages = msgArgumentCaptor.getAllValues();
+        List<AmqpMessageConsumer.MessageType> messageTypes = msgTypeArgumentCaptor.getAllValues();
 
         assertEquals(1, messages.size());
+        assertEquals(1, messageTypes.size());
+        assertEquals(AmqpMessageConsumer.MessageType.DEL_ANALYSIS, messageTypes.get(0));
 
         PncDelAnalysisNotificationMessageBody buildMsgBody = ObjectMapperProvider.json()
                 .readValue(String.valueOf(messages.get(0).getPayload()), PncDelAnalysisNotificationMessageBody.class);

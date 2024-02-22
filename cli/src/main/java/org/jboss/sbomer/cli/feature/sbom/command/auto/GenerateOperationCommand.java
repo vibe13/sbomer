@@ -82,8 +82,6 @@ public class GenerateOperationCommand implements Callable<Integer> {
     @Spec
     CommandSpec spec;
 
-    ObjectMapper objectMapper = ObjectMapperProvider.yaml();
-
     @Inject
     PncService pncService;
 
@@ -112,7 +110,7 @@ public class GenerateOperationCommand implements Callable<Integer> {
         OperationConfig config;
 
         try {
-            config = objectMapper.readValue(configPath.toAbsolutePath().toFile(), OperationConfig.class);
+            config = ObjectMapperProvider.json().readValue(configPath.toAbsolutePath().toFile(), OperationConfig.class);
         } catch (StreamReadException e) {
             log.error("Unable to parse the configuration file", e);
             return GenerationResult.ERR_CONFIG_INVALID.getCode();

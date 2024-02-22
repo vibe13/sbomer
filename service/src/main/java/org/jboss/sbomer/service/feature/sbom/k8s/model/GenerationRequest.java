@@ -237,9 +237,7 @@ public class GenerationRequest extends ConfigMap {
                 return null;
             }
         }
-        log.warn(
-                "A runtime.Config was asked, but looks it like the SbomGenerationType is not compatible with it ({})!",
-                getType());
+        log.warn("A Config was asked, but the SbomGenerationType ({}) is not compatible with it!", getType());
         return null;
     }
 
@@ -252,15 +250,13 @@ public class GenerationRequest extends ConfigMap {
         if (getType() != null && getType().equals(SbomGenerationType.OPERATION)) {
 
             try {
-                return ObjectMapperProvider.yaml().readValue(getConfig().toString().getBytes(), OperationConfig.class);
+                return ObjectMapperProvider.json().readValue(getConfig().toString().getBytes(), OperationConfig.class);
             } catch (IOException e) {
                 log.warn(e.getMessage(), e);
                 return null;
             }
         }
-        log.warn(
-                "A runtime.OperationConfig was asked, but looks it like the SbomGenerationType is not compatible with it ({})!",
-                getType());
+        log.warn("An OperationConfig was asked, but the SbomGenerationType ({}) is not compatible with it!", getType());
         return null;
     }
 

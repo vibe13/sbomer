@@ -55,7 +55,6 @@ public class PncNotificationHandler {
     KubernetesClient kubernetesClient;
 
     public void handle(Message<String> message, AmqpMessageConsumer.MessageType type) throws JsonProcessingException {
-
         switch (type) {
             case BUILD:
                 PncBuildNotificationMessageBody buildMsgBody = ObjectMapperProvider.json()

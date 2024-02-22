@@ -28,6 +28,7 @@ import org.cyclonedx.model.Bom;
 import org.cyclonedx.model.Component;
 import org.cyclonedx.model.Dependency;
 import org.cyclonedx.model.Metadata;
+import org.cyclonedx.model.Tool;
 import org.cyclonedx.model.Component.Scope;
 import org.cyclonedx.model.Component.Type;
 import org.jboss.pnc.enums.BuildType;
@@ -38,29 +39,23 @@ import org.jboss.pnc.dto.ProductVersion;
 import org.jboss.pnc.dto.response.AnalyzedArtifact;
 import org.jboss.sbomer.core.errors.ApplicationException;
 import org.jboss.sbomer.core.features.sbom.config.runtime.OperationConfig;
-import org.jboss.sbomer.core.features.sbom.config.runtime.RedHatProductProcessorConfig;
 import org.jboss.sbomer.core.features.sbom.enums.GeneratorType;
-import org.jboss.sbomer.core.features.sbom.enums.ProcessorType;
 import org.jboss.sbomer.core.features.sbom.utils.ObjectMapperProvider;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.DatabindException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import picocli.CommandLine.Command;
 
-import static org.jboss.sbomer.core.features.sbom.Constants.PROPERTY_ERRATA_PRODUCT_NAME;
-import static org.jboss.sbomer.core.features.sbom.Constants.PROPERTY_ERRATA_PRODUCT_VARIANT;
-import static org.jboss.sbomer.core.features.sbom.Constants.PROPERTY_ERRATA_PRODUCT_VERSION;
-
-import static org.jboss.sbomer.core.features.sbom.utils.SbomUtils.addPropertyIfMissing;
 import static org.jboss.sbomer.core.features.sbom.utils.SbomUtils.createBom;
 import static org.jboss.sbomer.core.features.sbom.utils.SbomUtils.createComponent;
 import static org.jboss.sbomer.core.features.sbom.utils.SbomUtils.createDependency;
-import static org.jboss.sbomer.core.features.sbom.utils.SbomUtils.createMetadata;
+import static org.jboss.sbomer.core.features.sbom.utils.SbomUtils.createDefaultSbomerMetadata;
 import static org.jboss.sbomer.core.features.sbom.utils.SbomUtils.setPncBuildMetadata;
 import static org.jboss.sbomer.core.features.sbom.utils.SbomUtils.setBrewBuildMetadata;
+import static org.jboss.sbomer.core.features.sbom.utils.SbomUtils.setPncOperationMetadata;
+import static org.jboss.sbomer.core.features.sbom.utils.SbomUtils.setProductMetadata;
 import static org.jboss.sbomer.core.features.sbom.utils.SbomUtils.toJsonNode;
 
 @Slf4j
@@ -70,8 +65,6 @@ import static org.jboss.sbomer.core.features.sbom.utils.SbomUtils.toJsonNode;
         aliases = { "maven-cyclonedx-operation" },
         description = "SBOM generation for deliverable Maven POMs using the CycloneDX Maven plugin")
 public class MavenCycloneDxGenerateOperationCommand extends AbstractGenerateOperationCommand {
-
-    ObjectMapper objectMapper = ObjectMapperProvider.yaml();
 
     @Override
     protected GeneratorType generatorType() {
@@ -84,7 +77,7 @@ public class MavenCycloneDxGenerateOperationCommand extends AbstractGenerateOper
         OperationConfig config;
 
         try {
-            config = objectMapper
+            config = ObjectMapperProvider.json()
                     .readValue(getParent().getConfigPath().toAbsolutePath().toFile(), OperationConfig.class);
         } catch (StreamReadException e) {
             log.error("Unable to parse the configuration file", e);
@@ -120,14 +113,14 @@ public class MavenCycloneDxGenerateOperationCommand extends AbstractGenerateOper
                 config.getOperationId());
 
         // Exclude from the analyzed artifacts' filenames the filenames related to exploded locations (e.g. inside jars)
-        List<AnalyzedArtifact> nonNestedArtifacts = currentDeliverableArtifacts.stream().filter(a -> {
+        List<AnalyzedArtifact> artifactsToManifest = currentDeliverableArtifacts.stream().filter(a -> {
             List<String> filenames = a.getArchiveFilenames();
             filenames.removeIf(filename -> filename.contains(".jar!/"));
             return filenames.size() > 0;
         }).collect(Collectors.toList());
 
-        String groupId = "groupId";
-        String artifactId = "artifactId";
+        String groupId = "<groupId>";
+        String artifactId = "<artifactId>";
 
         DeliverableAnalyzerOperation operation = pncService.getDeliverableAnalyzerOperation(config.getOperationId());
         if (operation.getProductMilestone() != null) {
@@ -152,12 +145,15 @@ public class MavenCycloneDxGenerateOperationCommand extends AbstractGenerateOper
                 + getParent().getOperationId();
 
         Component mainComponent = createComponent(null, fileName, artifactId, desc, mainPurl, Type.FILE);
-        Metadata metadata = createMetadata(mainComponent);
-        bom.setMetadata(metadata);
         Dependency mainDependency = createDependency(mainPurl);
+
+        setProductMetadata(mainComponent, config);
+        setPncOperationMetadata(mainComponent, operation, pncService.getApiUrl());
+
+        bom.setMetadata(createDefaultSbomerMetadata(mainComponent, sbomerClientFacade.getSbomerVersion()));
         bom.addDependency(mainDependency);
 
-        for (AnalyzedArtifact artifact : nonNestedArtifacts) {
+        for (AnalyzedArtifact artifact : artifactsToManifest) {
 
             KojiBuild brewBuild = null;
             BuildType buildType = null;
@@ -170,7 +166,8 @@ public class MavenCycloneDxGenerateOperationCommand extends AbstractGenerateOper
             }
 
             if (buildType == null) {
-                // While we understand how to represent e.g.
+                // TODO
+                // Understand how to represent plain files e.g.
                 // 'amq-broker-7.11.5.CR3-bin.zip!/apache-artemis-2.28.0.redhat-00016/web/hawtio.war!/WEB-INF/lib/json-20171018.jar'
                 continue;
             }
@@ -191,26 +188,6 @@ public class MavenCycloneDxGenerateOperationCommand extends AbstractGenerateOper
             bom.addComponent(component);
             bom.addDependency(dependency);
             mainDependency.addDependency(dependency);
-        }
-
-        if (config.getProduct() != null && config.getProduct().getProcessors() != null) {
-            config.getProduct().getProcessors().forEach(processorConfig -> {
-                if (ProcessorType.REDHAT_PRODUCT.equals(processorConfig.getType())) {
-                    RedHatProductProcessorConfig rhConfig = (RedHatProductProcessorConfig) processorConfig;
-                    addPropertyIfMissing(
-                            mainComponent,
-                            PROPERTY_ERRATA_PRODUCT_NAME,
-                            rhConfig.getErrata().getProductName());
-                    addPropertyIfMissing(
-                            mainComponent,
-                            PROPERTY_ERRATA_PRODUCT_VERSION,
-                            rhConfig.getErrata().getProductVersion());
-                    addPropertyIfMissing(
-                            mainComponent,
-                            PROPERTY_ERRATA_PRODUCT_VARIANT,
-                            rhConfig.getErrata().getProductVariant());
-                }
-            });
         }
 
         Path sbomDirPath = Path.of(parent.getWorkdir().toAbsolutePath().toString(), "bom.json");

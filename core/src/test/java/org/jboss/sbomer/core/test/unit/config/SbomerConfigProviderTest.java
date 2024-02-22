@@ -1,6 +1,7 @@
 package org.jboss.sbomer.core.test.unit.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,6 +14,7 @@ import org.jboss.sbomer.core.features.sbom.config.runtime.Config;
 import org.jboss.sbomer.core.features.sbom.config.runtime.DefaultProcessorConfig;
 import org.jboss.sbomer.core.features.sbom.config.runtime.ErrataConfig;
 import org.jboss.sbomer.core.features.sbom.config.runtime.GeneratorConfig;
+import org.jboss.sbomer.core.features.sbom.config.runtime.OperationConfig;
 import org.jboss.sbomer.core.features.sbom.config.runtime.ProcessorConfig;
 import org.jboss.sbomer.core.features.sbom.config.runtime.ProductConfig;
 import org.jboss.sbomer.core.features.sbom.config.runtime.RedHatProductProcessorConfig;
@@ -69,6 +71,28 @@ public class SbomerConfigProviderTest {
             return Config.builder().withBuildId("AABBCC").withProducts(List.of(productConfig)).build();
         }
 
+        private OperationConfig minimalRuntimeOperationConfig() {
+            List<ProcessorConfig> processors = new ArrayList<>();
+
+            processors.add(
+                    RedHatProductProcessorConfig.builder()
+                            .withErrata(
+                                    ErrataConfig.builder()
+                                            .productName("CCCDDD")
+                                            .productVersion("CCDD")
+                                            .productVariant("CD")
+                                            .build())
+                            .build());
+
+            ProductConfig productConfig = ProductConfig.builder()
+                    .withGenerator(GeneratorConfig.builder().type(GeneratorType.MAVEN_CYCLONEDX_OPERATION).build())
+                    .withProcessors(processors)
+
+                    .build();
+
+            return OperationConfig.builder().withOperationId("OPERATIONAABBCC").withProduct(productConfig).build();
+        }
+
         @Test
         void shouldNotFailOnEmptyProducts() {
             Config config = Config.builder().withBuildId("ABCDEFG").build();
@@ -108,20 +132,18 @@ public class SbomerConfigProviderTest {
         }
 
         @Test
-        void shouldNotAdjustExplicitGeneratorArgs() {
-            Config config = minimalRuntimeConfig();
+        void shouldNotAdjustExplicitGeneratorOperationArgs() {
+            OperationConfig config = minimalRuntimeOperationConfig();
 
-            config.getProducts().get(0).getGenerator().setArgs("--custom-args");
+            config.getProduct().getGenerator().setArgs("--custom-args");
 
             SbomerConfigProvider.getInstance().adjust(config);
-            ProductConfig product = config.getProducts().get(0);
+            ProductConfig product = config.getProduct();
 
-            assertEquals(2, product.getProcessors().size());
-            assertTrue(product.getProcessors().get(0) instanceof DefaultProcessorConfig);
-            assertTrue(product.getProcessors().get(1) instanceof RedHatProductProcessorConfig);
-            assertEquals(GeneratorType.MAVEN_CYCLONEDX, product.getGenerator().getType());
-            assertEquals("--custom-args", product.getGenerator().getArgs());
-            assertEquals("2.7.9", product.getGenerator().getVersion());
+            assertEquals(1, product.getProcessors().size());
+            assertEquals(GeneratorType.MAVEN_CYCLONEDX_OPERATION, product.getGenerator().getType());
+            assertNull(product.getGenerator().getArgs());
+            assertNull(product.getGenerator().getVersion());
         }
 
         @Test
@@ -136,6 +158,23 @@ public class SbomerConfigProviderTest {
             assertEquals(2, product.getProcessors().size());
             assertTrue(product.getProcessors().get(0) instanceof DefaultProcessorConfig);
             assertTrue(product.getProcessors().get(1) instanceof RedHatProductProcessorConfig);
+        }
+
+        @Test
+        void shouldNotAdjustExplicitGeneratorArgs() {
+            Config config = minimalRuntimeConfig();
+
+            config.getProducts().get(0).getGenerator().setArgs("--custom-args");
+
+            SbomerConfigProvider.getInstance().adjust(config);
+            ProductConfig product = config.getProducts().get(0);
+
+            assertEquals(2, product.getProcessors().size());
+            assertTrue(product.getProcessors().get(0) instanceof DefaultProcessorConfig);
+            assertTrue(product.getProcessors().get(1) instanceof RedHatProductProcessorConfig);
+            assertEquals(GeneratorType.MAVEN_CYCLONEDX, product.getGenerator().getType());
+            assertEquals("--custom-args", product.getGenerator().getArgs());
+            assertEquals("2.7.9", product.getGenerator().getVersion());
         }
     }
 }

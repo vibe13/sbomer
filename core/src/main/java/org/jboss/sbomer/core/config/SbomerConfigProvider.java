@@ -25,6 +25,7 @@ import org.jboss.sbomer.core.features.sbom.config.runtime.DefaultProcessorConfig
 import org.jboss.sbomer.core.features.sbom.config.runtime.OperationConfig;
 import org.jboss.sbomer.core.features.sbom.config.runtime.GeneratorConfig;
 import org.jboss.sbomer.core.features.sbom.config.runtime.ProductConfig;
+import org.jboss.sbomer.core.features.sbom.enums.GeneratorType;
 
 import io.smallrye.config.SmallRyeConfig;
 import io.smallrye.config.SmallRyeConfigBuilder;
@@ -81,29 +82,28 @@ public class SbomerConfigProvider {
     }
 
     /**
-     * Adjusts the provided {@link OperationConfig} by providing default values for not provided elements in generators
-     * as well as processors for each defined product.
+     * Adjusts the provided {@link OperationConfig} by providing default values for not provided elements in generators.
      *
      * @param config The {@link OperationConfig} object to be adjusted.
      */
     public void adjust(OperationConfig config) {
-        log.debug("Adjusting deliverable analysis configuration...");
+        log.debug("Adjusting operation configuration...");
 
-        // Adjusting generator configuration. This is the only thing we can adjust,
-        // because processor configuration is specific to the build and product release.
-        adjustGenerator(config.getProduct());
+        GeneratorConfig generatorConfig = config.getProduct().getGenerator();
 
-        config.getProduct().setProcessors(Collections.emptyList());
-        // if (!config.getProduct().hasDefaultProcessor()) {
-        // // Adding default processor as the first one
-        // log.debug("No default processor specified, adding one");
-        // config.getProduct().getProcessors().add(0, new DefaultProcessorConfig());
-        // }
+        // Generator configuration was not provided, will use defaults
+        if (generatorConfig == null) {
+            log.debug("No generator provided, will use defaults: '{}'", GeneratorType.MAVEN_CYCLONEDX_OPERATION);
+            generatorConfig = GeneratorConfig.builder().type(GeneratorType.MAVEN_CYCLONEDX_OPERATION).build();
+            config.getProduct().setGenerator(generatorConfig);
+        }
+        // Nullify the args and version as they are not used anyway
+        generatorConfig.setArgs(null);
+        generatorConfig.setVersion(null);
     }
 
     private void adjustGenerator(ProductConfig product) {
         GeneratorConfig generatorConfig = product.getGenerator();
-
         GeneratorConfig defaultGeneratorConfig = defaultGeneratorConfig();
 
         // Generator configuration was not provided, will use defaults
@@ -111,7 +111,6 @@ public class SbomerConfigProvider {
             log.debug("No generator provided, will use defaults: '{}'", defaultGeneratorConfig);
             product.setGenerator(defaultGeneratorConfig);
         } else {
-
             if (generatorConfig.getVersion() == null) {
                 String defaultVersion = defaultGenerationConfig.forGenerator(generatorConfig.getType())
                         .defaultVersion();

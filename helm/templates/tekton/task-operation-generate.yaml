@@ -63,10 +63,10 @@ spec:
           export QUARKUS_OIDC_CLIENT_CREDENTIALS_SECRET="$(cat /mnt/secrets/${SBOMER_SECRET_NAME}-${APP_ENV}/pnc-sbomer-client.secret)"
         fi
 
-        OPERATION_CONFIG_PATH="/workdir/operation-config.yaml"
+        OPERATION_CONFIG_PATH="${HOME}/operation-config.json"
 
         echo "Storing configuration in the $OPERATION_CONFIG_PATH file"
-        echo "$(params.operation-config)" | tee $OPERATION_CONFIG_PATH
+        echo '$(params.operation-config)' | tee $OPERATION_CONFIG_PATH
 
         mkdir -p $(workspaces.data.path)/$(context.taskRun.name)
         cd $(workspaces.data.path)/$(context.taskRun.name)

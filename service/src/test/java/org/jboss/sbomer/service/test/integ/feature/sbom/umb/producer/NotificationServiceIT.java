@@ -167,6 +167,6 @@ public class NotificationServiceIT {
 
         notificationService.notifyCompleted(List.of(sbom));
 
-        verify(amqpMessageProducer, times(0)).notify(any());
+        verify(amqpMessageProducer, times(0)).notify(any(GenerationFinishedMessageBody.class));
     }
 }

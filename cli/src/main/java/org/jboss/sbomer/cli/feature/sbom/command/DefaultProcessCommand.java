@@ -124,7 +124,7 @@ public class DefaultProcessCommand extends AbstractProcessCommand {
         }
     }
 
-    private void processBrewBuild(Component component, Artifact artifact) {
+    protected void processBrewBuild(Component component, Artifact artifact) {
         KojiBuild brewBuild = kojiService.findBuild(artifact);
         if (brewBuild != null) {
 

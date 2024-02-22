@@ -36,6 +36,7 @@ import org.jboss.sbomer.core.features.sbom.config.runtime.Config;
 import org.jboss.sbomer.core.features.sbom.config.runtime.DefaultProcessorConfig;
 import org.jboss.sbomer.core.features.sbom.config.runtime.ErrataConfig;
 import org.jboss.sbomer.core.features.sbom.config.runtime.GeneratorConfig;
+import org.jboss.sbomer.core.features.sbom.config.runtime.OperationConfig;
 import org.jboss.sbomer.core.features.sbom.config.runtime.ProductConfig;
 import org.jboss.sbomer.core.features.sbom.config.runtime.RedHatProductProcessorConfig;
 import org.jboss.sbomer.core.features.sbom.enums.GeneratorType;
@@ -73,7 +74,9 @@ public class SbomGenerationRequestRepositoryIT {
     SbomService sbomService;
 
     final static String REQUEST_ID = "FFAASSBB";
+    final static String OPERATION_REQUEST_ID = "OPFFAASSBB";
     final static String BUILD_ID = "RRYT3LBXDVYAC";
+    final static String OPERATION_ID = "OPERATION13";
 
     final static String REQUEST_ID_2_DELETE = "FFAASSBBDD";
     final static String BUILD_ID_2_DELETE = "RRYT3LBXDVYACDD";
@@ -111,6 +114,31 @@ public class SbomGenerationRequestRepositoryIT {
                 .build();
     }
 
+    private OperationConfig createRuntimeOperationConfig(String operationId) {
+        GeneratorConfig generatorConfig = GeneratorConfig.builder()
+                .type(GeneratorType.MAVEN_CYCLONEDX_OPERATION)
+                .build();
+
+        RedHatProductProcessorConfig redHatProductProcessorConfig = RedHatProductProcessorConfig.builder()
+                .withErrata(
+                        ErrataConfig.builder()
+                                .productName("CCCDDD")
+                                .productVersion("CCDD")
+                                .productVariant("CD")
+                                .build())
+                .build();
+        ProductConfig productConfig = ProductConfig.builder()
+                .withGenerator(generatorConfig)
+                .withProcessors(List.of(redHatProductProcessorConfig))
+                .build();
+
+        return OperationConfig.builder()
+                .withApiVersion("sbomer.jboss.org/v1alpha1")
+                .withOperationId(operationId)
+                .withProduct(productConfig)
+                .build();
+    }
+
     private Sbom createSBOM() throws IOException {
         Bom bom = SbomUtils.fromPath(sbomPath("complete_sbom.json"));
         Config runtimeConfig = createRuntimeConfig(BUILD_ID);
@@ -132,10 +160,33 @@ public class SbomGenerationRequestRepositoryIT {
         return sbom;
     }
 
+    private Sbom createOperationSBOM() throws IOException {
+        Bom bom = SbomUtils.fromPath(sbomPath("complete_sbom.json"));
+        OperationConfig runtimeConfig = createRuntimeOperationConfig(OPERATION_ID);
+
+        SbomGenerationRequest generationRequest = SbomGenerationRequest.builder()
+                .withConfig(SbomUtils.toJsonNode(runtimeConfig))
+                .withId(OPERATION_REQUEST_ID)
+                .withIdentifier(OPERATION_ID)
+                .withType(SbomGenerationType.OPERATION)
+                .withStatus(SbomGenerationStatus.FINISHED)
+                .build();
+
+        // Not setting rootPurl, as it will be set by PrePersist
+        Sbom sbom = new Sbom();
+        sbom.setIdentifier(OPERATION_ID);
+        sbom.setId("131340206274228333");
+        sbom.setSbom(SbomUtils.toJsonNode(bom));
+        sbom.setGenerationRequest(generationRequest);
+        return sbom;
+    }
+
     @PostConstruct
     public void init() throws Exception {
         Sbom sbom = createSBOM();
+        Sbom operationSbom = createOperationSBOM();
         sbomRepository.saveSbom(sbom);
+        sbomRepository.saveSbom(operationSbom);
     }
 
     @Test
@@ -147,6 +198,7 @@ public class SbomGenerationRequestRepositoryIT {
         assertNotNull(request);
         assertNotNull(request.getCreationTime());
         assertEquals(REQUEST_ID, request.getId());
+        assertEquals(SbomGenerationType.BUILD, request.getType());
         assertEquals(BUILD_ID, request.getIdentifier());
 
         request = sbomGenerationRequestRepository.search(
@@ -156,6 +208,17 @@ public class SbomGenerationRequestRepositoryIT {
         assertNotNull(request);
         assertEquals(REQUEST_ID, request.getId());
         assertEquals(BUILD_ID, request.getIdentifier());
+        assertEquals(SbomGenerationType.BUILD, request.getType());
+        assertEquals("FINISHED".toLowerCase(), request.getStatus().toName());
+
+        request = sbomGenerationRequestRepository.search(
+                QueryParameters.builder().rsqlQuery("identifier=eq=" + OPERATION_ID).pageIndex(0).pageSize(1).build())
+                .get(0);
+
+        assertNotNull(request);
+        assertEquals(OPERATION_REQUEST_ID, request.getId());
+        assertEquals(OPERATION_ID, request.getIdentifier());
+        assertEquals(SbomGenerationType.OPERATION, request.getType());
         assertEquals("FINISHED".toLowerCase(), request.getStatus().toName());
     }
 
@@ -182,6 +245,14 @@ public class SbomGenerationRequestRepositoryIT {
 
         assertEquals(REQUEST_ID, request.getId());
         assertEquals(BUILD_ID, request.getIdentifier());
+    }
+
+    @Test
+    public void testFindByOperationIdSbomGenerationRequest() {
+        SbomGenerationRequest request = SbomGenerationRequest.findById(OPERATION_REQUEST_ID);
+
+        assertEquals(OPERATION_REQUEST_ID, request.getId());
+        assertEquals(OPERATION_ID, request.getIdentifier());
     }
 
     @Test

@@ -1,43 +1,10 @@
 {
-  "i": 0,
-  "msg_id": "ID:orch-69b8dd97cf-z57gv-40651-1706671382282-1:1:2196:1:1",
-  "topic": "/topic/VirtualTopic.eng.pnc.builds",
-  "timestamp": 1707114129.0,
-  "certificate": null,
-  "signature": null,
-  "username": null,
-  "crypto": null,
-  "msg": {
-    "attribute": "deliverable-analysis-state-change",
-    "deliverablesUrls": [
-      "https://download.com/my-7.10.6.CR1-maven-repository.zip",
-      "https://download.com/my-7.10.6.CR1-bin.zip"
-    ],
-    "milestoneId": "2712",
-    "operationId": "A6DFVW2SACIAA",
-    "status": "FINISHED"
-  },
-  "headers": {
-    "JMSXUserID": "projectnewcastle",
-    "amq6100_destination": "queue://Consumer.datanommer.psi-ocp-bm-prod.VirtualTopic.eng.>",
-    "amq6100_originalDestination": "topic://VirtualTopic.eng.pnc.builds",
-    "attribute": "deliverable-analysis-state-change",
-    "correlation-id": "1055824e-023a-4c57-bf6f-575c8915b55e",
-    "destination": "/topic/VirtualTopic.eng.pnc.builds",
-    "expires": "1707200529546",
-    "message-id": "ID:orch-69b8dd97cf-z57gv-40651-1706671382282-1:1:2196:1:1",
-    "milestoneId": "2712",
-    "operationId": "A6DFVW2SACIAA",
-    "original-destination": "/topic/VirtualTopic.eng.pnc.builds",
-    "persistent": "true",
-    "priority": "4",
-    "producer": "PNC",
-    "status": "FINISHED",
-    "subscription": "/queue/Consumer.datanommer.psi-ocp-bm-prod.VirtualTopic.eng.>",
-    "timestamp": "1707114129546",
-    "traceparent": "00-adc45eb99e1995a26056cc96bb846a69-bebef45ae8330c23-01",
-    "type": "DeliverableAnalysisStateChange"
-  },
-  "source_name": "datanommer",
-  "source_version": "0.9.1"
+  "attribute": "deliverable-analysis-state-change",
+  "deliverablesUrls": [
+    "https://download.com/my-7.10.6.CR1-maven-repository.zip",
+    "https://download.com/my-7.10.6.CR1-bin.zip"
+  ],
+  "milestoneId": "2712",
+  "operationId": "A6DFVW2SACIAA",
+  "status": "FINISHED"
 }

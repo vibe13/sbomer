@@ -41,12 +41,16 @@ public class KojiProvider {
     public KojiClientSession createSession() throws KojiClientException {
         log.debug("Using default Koji ClientSession");
 
-        URL kojiHubURL = config.getKojiHubURL();
+        URL kojiHubURL = getBuildConfig().getKojiHubURL();
         if (kojiHubURL == null) {
             throw new KojiClientException("Koji hub URL is not set");
         }
         log.info("Initializing Koji client session with URL {}", kojiHubURL);
         return new KojiClientSession(kojiHubURL);
+    }
+
+    public BuildConfig getBuildConfig() {
+        return config;
     }
 
     public void close(@Disposes KojiClientSession session) {

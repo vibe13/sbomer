@@ -17,11 +17,17 @@
  */
 package org.jboss.sbomer.cli.feature.sbom.client;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.jboss.sbomer.cli.feature.sbom.model.Sbom;
 import org.jboss.sbomer.cli.feature.sbom.model.SbomGenerationRequest;
 import org.jboss.sbomer.core.utils.PaginationParameters;
 
+import jakarta.annotation.security.PermitAll;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BeanParam;
@@ -40,7 +46,7 @@ import jakarta.ws.rs.core.Response;
  */
 @ApplicationScoped
 @RegisterRestClient(configKey = "sbomer")
-@Path("/api/v1alpha2/sboms")
+@Path("/api/v1alpha2")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface SBOMerClient {
@@ -52,7 +58,7 @@ public interface SBOMerClient {
      * @return {@link Sbom}
      */
     @GET
-    @Path("/{id}")
+    @Path("/sboms/{id}")
     Response getById(@HeaderParam("log-process-context") String processContext, @PathParam("id") String id);
 
     /**
@@ -62,30 +68,42 @@ public interface SBOMerClient {
      * @return {@link SbomGenerationRequest}
      */
     @GET
-    @Path("/requests/{id}")
+    @Path("/sboms/requests/{id}")
     Response getGenerationRequestById(
             @HeaderParam("log-process-context") String processContext,
             @PathParam("id") String id);
 
     /**
-     * Search the base SBOM based on the build ID via RSQL search and pagination.
+     * Search the base SBOM based on the identifier via RSQL search and pagination.
      *
      * @param paginationParams
      * @param rsqlQuery
      * @return {@link Response}
      */
     @GET
+    @Path("/sboms")
     Response searchSboms(
             @HeaderParam("log-process-context") String processContext,
             @Valid @BeanParam PaginationParameters paginationParams,
             @QueryParam("query") String rsqlQuery,
             @QueryParam("sort") String rsqlSort);
 
+    /**
+     * Search the generation requests based on the identifier via RSQL search and pagination.
+     *
+     * @param paginationParams
+     * @param rsqlQuery
+     * @return {@link Response}
+     */
     @GET
-    @Path("/requests")
+    @Path("/sboms/requests")
     Response searchGenerationRequests(
             @HeaderParam("log-process-context") String processContext,
             @Valid @BeanParam PaginationParameters paginationParams,
             @QueryParam("query") String rsqlQuery,
             @QueryParam("sort") String rsqlSort);
+
+    @GET
+    @Path("/stats")
+    Response getStats();
 }

@@ -65,7 +65,7 @@ public class SBOMResourceRSQIT {
                     .and()
                     .body("totalPages", CoreMatchers.equalTo(1))
                     .and()
-                    .body("totalHits", CoreMatchers.equalTo(1))
+                    .body("totalHits", CoreMatchers.equalTo(2))
                     .and()
                     .body("content.id", CoreMatchers.hasItem("416640206274228224"))
                     .and()
@@ -92,7 +92,7 @@ public class SBOMResourceRSQIT {
                     .and()
                     .body("totalPages", CoreMatchers.equalTo(1))
                     .and()
-                    .body("totalHits", CoreMatchers.equalTo(1))
+                    .body("totalHits", CoreMatchers.equalTo(2))
                     .and()
                     .body("content.id", CoreMatchers.hasItem("416640206274228224"))
                     .and()
@@ -409,6 +409,53 @@ public class SBOMResourceRSQIT {
                         "GET",
                         "/api/v1alpha1/sboms?pageIndex=" + pageIndex + "&pageSize=" + pageSize
                                 + "&query=statusMessage=='*went*'")
+                .then()
+                .statusCode(200)
+                .body("content.id", CoreMatchers.hasItem("12345"))
+                .and()
+                .body("content.identifier", CoreMatchers.hasItem("AWI7P3EJ23YAA"));
+    }
+
+    @Test
+    public void testLegacyRSQLSearch() throws Exception {
+        int pageIndex = 0;
+        int pageSize = 50;
+
+        Page<Sbom> pagedSboms = initializeOneResultPaginated(pageIndex, pageSize);
+
+        Mockito.when(
+                sbomService.searchSbomsByQueryPaginated(
+                        pageIndex,
+                        pageSize,
+                        "buildId==AWI7P3EJ23YAA",
+                        "creationTime=desc="))
+                .thenReturn(pagedSboms);
+        Mockito.when(
+                sbomService.searchSbomsByQueryPaginated(
+                        pageIndex,
+                        pageSize,
+                        "buildId=eq=AWI7P3EJ23YAA",
+                        "creationTime=desc="))
+                .thenReturn(pagedSboms);
+
+        given().when()
+                .contentType(ContentType.JSON)
+                .request(
+                        "GET",
+                        "/api/v1alpha1/sboms?pageIndex=" + pageIndex + "&pageSize=" + pageSize
+                                + "&query=buildId==AWI7P3EJ23YAA")
+                .then()
+                .statusCode(200)
+                .body("content.id", CoreMatchers.hasItem("12345"))
+                .and()
+                .body("content.identifier", CoreMatchers.hasItem("AWI7P3EJ23YAA"));
+
+        given().when()
+                .contentType(ContentType.JSON)
+                .request(
+                        "GET",
+                        "/api/v1alpha1/sboms?pageIndex=" + pageIndex + "&pageSize=" + pageSize
+                                + "&query=buildId=eq=AWI7P3EJ23YAA")
                 .then()
                 .statusCode(200)
                 .body("content.id", CoreMatchers.hasItem("12345"))

@@ -139,7 +139,7 @@ public class PncServiceIT {
         assertNotNull(productVersion);
         assertEquals("316", productVersion.getId());
         assertEquals("7.11", productVersion.getVersion());
-        assertEquals(16, productVersion.getProductMilestones().size());
+        assertEquals(15, productVersion.getProductMilestones().size());
     }
 
     @Test
@@ -169,6 +169,6 @@ public class PncServiceIT {
         log.info("testFetchOperationResults ...");
         List<AnalyzedArtifact> artifacts = service.getAllAnalyzedArtifacts("A5RPHL7Y3AIAA");
         assertNotNull(artifacts);
-        assertEquals(1255, artifacts.size());
+        assertEquals(1, artifacts.size());
     }
 }

@@ -15,11 +15,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jboss.sbomer.core.dto.v1alpha2;
+package org.jboss.sbomer.service.feature.sbom.features.umb.producer.model;
 
-import java.time.Instant;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import lombok.Builder;
+import lombok.Data;
 
-public record SbomGenerationRequestRecord(String id, String identifier, JsonNode config, String type, Instant creationTime) {
-};
+@Data
+@Builder
+public class Operation {
+    public static enum BuildSystem {
+        @JsonProperty("pnc")
+        PNC
+    }
+
+    /**
+     * Type of the build system.
+     */
+    @JsonProperty("system")
+    @Builder.Default
+    BuildSystem buildSystem = BuildSystem.PNC;
+
+    /**
+     * The unique operation identifier.
+     */
+    String id;
+
+    /**
+     * Link to the build system's API for the operation.
+     */
+    String link;
+
+    /**
+     * The identifier of the deliverable.
+     */
+    String deliverable;
+}

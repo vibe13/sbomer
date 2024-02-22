@@ -1,15 +1,15 @@
 {
   "request": {
     "method": "GET",
-    "url": "/pnc-rest/v2/deliverable-analyses/A5RPHL7Y3AIAA/analyzed-artifacts?pageIndex=0&pageSize=1"
+    "url": "/pnc-rest/v2/deliverable-analyses/A5RPHL7Y3AIAA/analyzed-artifacts?pageIndex=0&pageSize=100"
   },
   "response": {
     "status": 200,
     "jsonBody": {
       "pageIndex": 0,
-      "pageSize": 1,
-      "totalPages": 1255,
-      "totalHits": 1255,
+      "pageSize": 100,
+      "totalPages": 1,
+      "totalHits": 1,
       "content": [
         {
           "builtFromSource": true,

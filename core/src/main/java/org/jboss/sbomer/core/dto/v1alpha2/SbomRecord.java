@@ -38,7 +38,7 @@ public record SbomRecord(
             Integer configIndex,
             String statusMessage,
             String gId,
-            String gBuildId,
+            String gIdentifier,
             JsonNode gConfig,
             String gType,
             Instant gCreationTime) {
@@ -49,7 +49,7 @@ public record SbomRecord(
                 creationTime,
                 configIndex,
                 statusMessage,
-                new SbomGenerationRequestRecord(gId, gBuildId, gConfig, gType, gCreationTime));
+                new SbomGenerationRequestRecord(gId, gIdentifier, gConfig, gType, gCreationTime));
     }
 
 };

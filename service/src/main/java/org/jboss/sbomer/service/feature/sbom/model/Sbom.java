@@ -67,7 +67,7 @@ import lombok.ToString;
 @ToString
 @Table(
         name = "sbom",
-        indexes = { @Index(name = "idx_sbom_buildid", columnList = "build_id"),
+        indexes = { @Index(name = "idx_sbom_identifier", columnList = "identifier"),
                 @Index(name = "idx_sbom_rootpurl", columnList = "root_purl") })
 @NoArgsConstructor
 @AllArgsConstructor

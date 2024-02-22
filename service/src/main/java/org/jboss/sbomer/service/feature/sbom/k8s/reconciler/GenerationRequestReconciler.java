@@ -783,7 +783,7 @@ public class GenerationRequestReconciler implements Reconciler<GenerationRequest
         if (failedTaskRuns.isEmpty()) {
 
             List<Sbom> sboms = storeOperationSboms(generationRequest);
-            notificationService.notifyCompleted(sboms);
+            notificationService.notifyOperationCompleted(sboms);
 
             return updateRequest(
                     generationRequest,
@@ -1267,7 +1267,7 @@ public class GenerationRequestReconciler implements Reconciler<GenerationRequest
         OperationConfig config;
 
         try {
-            config = objectMapper.readValue(configVal.getBytes(), OperationConfig.class);
+            config = ObjectMapperProvider.json().readValue(configVal.getBytes(), OperationConfig.class);
         } catch (IOException e) {
             throw new ApplicationException(
                     "Could not parse the '{}' result within the TaskRun '{}': {}",
@@ -1279,7 +1279,7 @@ public class GenerationRequestReconciler implements Reconciler<GenerationRequest
         log.debug("Runtime config from TaskRun '{}' parsed: {}", taskRun.getMetadata().getName(), config);
 
         try {
-            generationRequest.setConfig(objectMapper.writeValueAsString(config));
+            generationRequest.setConfig(ObjectMapperProvider.json().writeValueAsString(config));
         } catch (JsonProcessingException e) {
             log.error("Unable to serialize product configuration", e);
         }

@@ -95,12 +95,8 @@ public class GenerateOperationConfigCommand implements Callable<Integer> {
     @Inject
     OperationConfigSchemaValidator configSchemaValidator;
 
-    SbomerConfigProvider configAdjuster = new SbomerConfigProvider();
-
     @Inject
     ProductVersionMapper productVersionMapper;
-
-    ObjectMapper objectMapper = ObjectMapperProvider.yaml();
 
     /**
      * Retrieves configuration from a SBOMer configuration file from the internal mapping.
@@ -182,7 +178,7 @@ public class GenerateOperationConfigCommand implements Callable<Integer> {
                 String content = Files.readString(partialConfigPath).trim();
                 if (content.length() > 0) {
                     try {
-                        operationConfig = objectMapper.readValue(content, OperationConfig.class);
+                        operationConfig = ObjectMapperProvider.json().readValue(content, OperationConfig.class);
                     } catch (StreamReadException e) {
                         log.error("Unable to parse the configuration file", e);
                         return GenerationResult.ERR_CONFIG_INVALID.getCode();
@@ -211,23 +207,23 @@ public class GenerateOperationConfigCommand implements Callable<Integer> {
         }
 
         log.debug("RAW config: '{}'", config);
-
-        configAdjuster.adjust(config);
+        SbomerConfigProvider sbomerConfigProvider = SbomerConfigProvider.getInstance();
+        sbomerConfigProvider.adjust(config);
 
         config.setOperationId(operationId);
 
         log.debug("Configuration adjusted, starting validation");
 
-        // ValidationResult result = configSchemaValidator.validate(config);
+        ValidationResult result = configSchemaValidator.validate(config);
 
-        // if (!result.isValid()) {
-        // log.error("Configuration is not valid!");
+        if (!result.isValid()) {
+            log.error("Configuration is not valid!");
 
-        // result.getErrors().forEach(msg -> {
-        // log.error(msg);
-        // });
-        // return GenerationResult.ERR_CONFIG_INVALID.getCode();
-        // }
+            result.getErrors().forEach(msg -> {
+                log.error(msg);
+            });
+            return GenerationResult.ERR_CONFIG_INVALID.getCode();
+        }
 
         log.debug("Configuration is valid!");
 
