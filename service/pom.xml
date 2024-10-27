@@ -175,15 +175,10 @@
       <version>${version.quarkus-jgit}</version>
     </dependency>
     <dependency>
-      <groupId>io.quarkiverse.kerberos</groupId>
-      <artifactId>quarkus-kerberos</artifactId>
-      <version>${version.quarkus-kerberos}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkiverse.kerberos</groupId>
-      <artifactId>quarkus-kerberos-client</artifactId>
-      <version>${version.quarkus-kerberos}</version>
-    </dependency>
+      <groupId>org.apache.kerby</groupId>
+      <artifactId>kerb-client</artifactId>
+      <version>${version.kerb-client}</version>
+  </dependency>
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-json-schema</artifactId>
@@ -264,12 +259,6 @@
       <groupId>org.wiremock</groupId>
       <artifactId>wiremock</artifactId>
       <version>3.9.2</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkiverse.kerberos</groupId>
-      <artifactId>quarkus-kerberos-test-util</artifactId>
-      <version>${version.quarkus-kerberos}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

@@ -37,8 +37,8 @@ import org.jboss.sbomer.service.feature.sbom.errata.dto.ErrataPage;
 import org.jboss.sbomer.service.feature.sbom.errata.dto.ErrataProduct;
 import org.jboss.sbomer.service.feature.sbom.errata.dto.ErrataRelease;
 import org.jboss.sbomer.service.feature.sbom.errata.dto.ErrataVariant;
+import org.jboss.sbomer.service.feature.sbom.kerberos.Krb5ClientRequestFilter;
 
-import io.quarkiverse.kerberos.client.KerberosClientRequestFilter;
 import io.quarkus.rest.client.reactive.ClientExceptionMapper;
 import io.smallrye.reactive.messaging.annotations.Blocking;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -59,7 +59,7 @@ import jakarta.ws.rs.core.Response;
 @ClientHeaderParam(name = "User-Agent", value = "SBOMer")
 @RegisterRestClient(configKey = "errata")
 @Path("/api/v1")
-@RegisterProvider(KerberosClientRequestFilter.class)
+@RegisterProvider(Krb5ClientRequestFilter.class)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface ErrataClient {
